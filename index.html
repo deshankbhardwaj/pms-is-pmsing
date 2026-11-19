@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PRISM · Performance Management System</title>
+<meta name="description" content="PRISM: a performance management system you can see. Course project, fictional data.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpolygon points='16,3 3,28 29,28' fill='%2314151c'/%3E%3Cpolygon points='16,9 8,25 24,25' fill='%238b5cf6'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;1,9..144,600&family=Manrope:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+<div class="progress" id="progress"></div>
+
+<!-- ============ LANDING (M0) ============ -->
+<div id="landing">
+  <header class="l-top"><span>PRISM</span><span class="tag">Course project · fictional data</span></header>
+  <section id="hero">
+    <div class="stage">
+      <div class="glow"></div>
+      <svg id="scene" viewBox="0 0 1200 700" aria-hidden="true">
+        <defs>
+          <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".40"/>
+            <stop offset=".5" stop-color="#9fb2ff" stop-opacity=".10"/>
+            <stop offset="1" stop-color="#ffffff" stop-opacity=".24"/>
+          </linearGradient>
+          <filter id="soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6"/></filter>
+        </defs>
+        <g id="beamIn">
+          <line class="draw" x1="-40" y1="424" x2="535" y2="322" stroke="#fff" stroke-width="12" opacity=".22" filter="url(#soft)"/>
+          <line class="draw" x1="-40" y1="424" x2="535" y2="322" stroke="#fff" stroke-width="3"/>
+        </g>
+        <g id="spectrum"></g>
+        <g id="labels"></g>
+        <circle id="flood" cx="600" cy="340" r="0" fill="#f4f1ea"/>
+        <g id="prism">
+          <g id="shards"></g>
+          <polygon id="outline" points="600,210 470,435 730,435" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="2" stroke-linejoin="round"/>
+          <line id="inner" x1="535" y1="322" x2="665" y2="322" stroke="#fff" stroke-opacity=".55" stroke-width="2"/>
+        </g>
+        <circle id="flash" cx="600" cy="340" r="10" fill="#fff" opacity="0"/>
+      </svg>
+      <div class="hero-title"><h1 id="title">PRISM</h1><p>A performance management system you can see</p></div>
+      <div class="scroll-hint">Scroll</div>
+      <div class="cards-wrap">
+        <div class="cards-head">One core. Many lenses.<small>The prism splits into the modules of the PMS. Pick one, or take the tour.</small></div>
+        <div class="l-cards" id="lcards"></div>
+        <div class="l-cta" id="lcta">
+          <button class="btn pri" data-go="tour">▶ Take the 6-minute tour</button>
+          <button class="btn light" data-go="overview">Explore VoltBridge (EV sample)</button>
+          <button class="btn light" data-go="data">Use my own data</button>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="l-below">
+    <div class="inner">
+      <div class="eyebrow" style="--mc:#8b5cf6">Choose your lens</div>
+      <h2>One central PMS. A smaller PMS for every industry.</h2>
+      <p class="lead">Pick an industry and PRISM sets the defaults: pace, roles, KPIs, appraisal methods, ranking rules and rewards. This build is EV-first: the VoltBridge sample is fully built; the other industries arrive as presets.</p>
+      <div class="lens-pick" id="lensPick"></div>
+      <p class="lead mt2 small">Fictional data. VoltBridge Mobility, its 256 people and their numbers are invented for an MDI Gurgaon course project. Nothing you load leaves your browser.</p>
+    </div>
+  </section>
+</div>
+
+<!-- ============ APP SHELL ============ -->
+<div id="app" class="hidden">
+  <aside class="side" id="side">
+    <div class="brand" data-go="home" title="Back to the landing page">
+      <svg class="logo" viewBox="0 0 32 32"><polygon points="16,3 3,28 29,28" fill="#fff"/><polygon points="16,9 8,25 24,25" fill="#8b5cf6"/></svg>
+      <b>PRISM</b>
+    </div>
+    <div class="orgchip" id="orgchip"></div>
+    <nav class="nav" id="nav"></nav>
+    <div class="foot">All data fictional · built for an MDI Gurgaon PMS course project · spec v0.4</div>
+  </aside>
+  <div class="main">
+    <div class="topbar">
+      <button class="btn light sm menu-btn" id="menuBtn">☰</button>
+      <div class="crumb" id="crumb"></div>
+      <select class="sel hide-sm" id="personaJump" title="Jump to a persona"></select>
+      <div class="seg" id="lensSeg" title="Country lens">
+        <button data-lens="home" class="on">Home rules</button>
+        <button data-lens="IN"><span class="code IN">IN</span></button>
+        <button data-lens="CN"><span class="code CN">CN</span></button>
+      </div>
+      <button class="btn pri sm" id="tourBtn">▶ Tour</button>
+    </div>
+    <div class="content" id="content"></div>
+  </div>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer"><div class="dh" id="drawerHead"></div><div class="db" id="drawerBody"></div></aside>
+<div class="toast" id="toast"></div>
+<div class="changes" id="changes"><button class="x" id="changesX">×</button><h5>What changed</h5><ul id="changesList"></ul></div>
+<canvas id="confetti"></canvas>
+<noscript><p style="padding:40px;font-family:sans-serif">PRISM needs JavaScript. Open it through a local web server (see README).</p></noscript>
+
+<script src="vendor/gsap.min.js"></script>
+<script src="vendor/ScrollTrigger.min.js"></script>
+<script src="vendor/Flip.min.js"></script>
+<script src="vendor/Draggable.min.js"></script>
+<script src="vendor/exceljs.min.js" defer></script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

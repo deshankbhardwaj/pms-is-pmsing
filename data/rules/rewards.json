@@ -1,0 +1,87 @@
+{
+  "_about": "Rewards maths defaults (PRISM v0.4 §8.4). The Reward_Policy sheet of an uploaded workbook overrides these. All money figures are fictional placeholders, to be sourced before final.",
+  "company_factor": 1.0,
+  "rating_multiplier": {
+    "1": 0,
+    "2": 0.5,
+    "3": 1.0,
+    "4": 1.25,
+    "5": 1.5
+  },
+  "compa_bands": [
+    {
+      "band": "low",
+      "label": "below 0.9",
+      "max": 0.9
+    },
+    {
+      "band": "mid",
+      "label": "0.9 to 1.1",
+      "max": 1.1
+    },
+    {
+      "band": "high",
+      "label": "above 1.1",
+      "max": 99
+    }
+  ],
+  "merit_multiple": {
+    "5": {
+      "low": 1.8,
+      "mid": 1.5,
+      "high": 1.2
+    },
+    "4": {
+      "low": 1.4,
+      "mid": 1.2,
+      "high": 1.0
+    },
+    "3": {
+      "low": 1.1,
+      "mid": 1.0,
+      "high": 0.7
+    },
+    "2": {
+      "low": 0.5,
+      "mid": 0.3,
+      "high": 0.0
+    },
+    "1": {
+      "low": 0.0,
+      "mid": 0.0,
+      "high": 0.0
+    }
+  },
+  "sales": {
+    "commission_per_unit": {
+      "IN": 1500,
+      "CN": 120
+    },
+    "top_tier_kicker_pct_of_commission": 20,
+    "club_trip_top_pct": 5,
+    "quarterly_contest": true,
+    "festive_contest": {
+      "IN": "Diwali sales contest",
+      "CN": "Year-end bonus before Spring Festival"
+    },
+    "quarterly_target_units": {
+      "IN": 24,
+      "CN": 30
+    }
+  },
+  "gainsharing": {
+    "pool_share_of_savings_pct": 30,
+    "split": "attendance-adjusted hours"
+  },
+  "rnd": {
+    "patent_filing_bonus": {
+      "IN": 50000,
+      "CN": 5000
+    },
+    "patent_grant_bonus": {
+      "IN": 150000,
+      "CN": 15000
+    }
+  },
+  "budget_guard": true
+}

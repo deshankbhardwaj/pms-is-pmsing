@@ -1,0 +1,162 @@
+{
+  "_about": "Method Mixer rules (PRISM v0.4 §8.1). Affinity = bias + sum(coef x (score - 3)) over the role profile; pace uses (pace - 5.5) / 2.25. The top methods with positive affinity are blended to 100%.",
+  "top_n": 3,
+  "round_to": 5,
+  "dims": {
+    "M": "measurability",
+    "I": "interdependence",
+    "S": "standardisation",
+    "N": "innovation",
+    "D": "digital_access",
+    "L": "seniority",
+    "R": "regulatory_criticality",
+    "T": "talent_supply",
+    "K": "org pace"
+  },
+  "methods": [
+    {
+      "id": "checklist",
+      "name": "Checklist / SOP",
+      "family": "traditional",
+      "bias": 0.0,
+      "coef": {
+        "S": 0.7,
+        "R": 0.6,
+        "N": -0.5
+      },
+      "why": "Standardised, regulated work is best judged against a clear checklist."
+    },
+    {
+      "id": "bars",
+      "name": "BARS",
+      "family": "traditional",
+      "bias": 0.3,
+      "coef": {
+        "S": 0.6,
+        "I": 0.3,
+        "N": -0.4,
+        "L": -0.3
+      },
+      "why": "Observable behaviours can be anchored to concrete examples on a 1-5 scale."
+    },
+    {
+      "id": "incident",
+      "name": "Critical incident",
+      "family": "traditional",
+      "bias": -0.4,
+      "coef": {
+        "R": 0.6,
+        "S": 0.3,
+        "L": -0.3
+      },
+      "why": "Safety-critical work needs a record of the moments that matter."
+    },
+    {
+      "id": "ranking",
+      "name": "Ranking",
+      "family": "traditional",
+      "bias": 0.4,
+      "coef": {
+        "M": 0.8,
+        "I": -0.6,
+        "N": -0.6,
+        "K": 0.3
+      },
+      "why": "Individual, measurable output can be compared in calibration; in large pools it is tiered for rewards.",
+      "requires_ranking_verdict": [
+        "forced",
+        "relative"
+      ]
+    },
+    {
+      "id": "mbo",
+      "name": "MBO",
+      "family": "traditional",
+      "bias": -0.6,
+      "coef": {
+        "L": 0.9,
+        "M": 0.2,
+        "K": -0.4
+      },
+      "why": "Senior roles with clear annual objectives suit management by objectives."
+    },
+    {
+      "id": "kpi",
+      "name": "KPI scorecard",
+      "family": "contemporary",
+      "bias": 0.6,
+      "coef": {
+        "M": 1.4,
+        "D": 0.2
+      },
+      "why": "Measurable results are tracked on a weighted scorecard."
+    },
+    {
+      "id": "bsc",
+      "name": "Balanced Scorecard",
+      "family": "contemporary",
+      "bias": -0.8,
+      "coef": {
+        "L": 1.3,
+        "I": 0.3
+      },
+      "why": "Leaders balance financial, customer, process and people goals."
+    },
+    {
+      "id": "okr",
+      "name": "OKRs",
+      "family": "contemporary",
+      "bias": 0.2,
+      "coef": {
+        "N": 1.3,
+        "S": -0.6
+      },
+      "why": "Uncertain, creative work needs ambitious objectives where 0.7 counts as success."
+    },
+    {
+      "id": "r360",
+      "name": "360° feedback",
+      "family": "contemporary",
+      "bias": -0.5,
+      "coef": {
+        "L": 0.6,
+        "I": 0.6,
+        "N": 0.3
+      },
+      "why": "Collaborative and leadership roles are seen best from several angles (kept anonymous)."
+    },
+    {
+      "id": "checkins",
+      "name": "Check-ins",
+      "family": "contemporary",
+      "bias": -0.6,
+      "coef": {
+        "N": 0.5,
+        "K": 0.4,
+        "D": 0.2
+      },
+      "why": "Fast-moving work needs frequent conversations, not a once-a-year review."
+    },
+    {
+      "id": "dashboard",
+      "name": "Gamified dashboard",
+      "family": "contemporary",
+      "bias": -0.3,
+      "coef": {
+        "M": 0.8,
+        "D": 0.5,
+        "I": -0.6
+      },
+      "why": "High-volume, measurable work responds to real-time leaderboards."
+    },
+    {
+      "id": "acr",
+      "name": "Confidential report (ACR/APAR)",
+      "family": "traditional",
+      "bias": -9,
+      "coef": {},
+      "why": "Public-sector baseline only.",
+      "public_sector_only": true
+    }
+  ]
+}

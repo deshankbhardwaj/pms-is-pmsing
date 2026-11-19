@@ -1,0 +1,35 @@
+{
+  "_about": "Born 30 · Built 70 rules (PRISM v0.4 §8.6). Arvey et al. (2006): ~30% of the variance in leadership role occupancy was genetic. This describes populations, not people: PRISM never measures, infers or scores anything genetic.",
+  "weights": {
+    "standard":   {"results": 70, "behaviours": 20, "growth": 10},
+    "leadership": {"results": 55, "behaviours": 25, "growth": 20},
+    "rampup":     {"results": 40, "behaviours": 30, "growth": 30}
+  },
+  "rampup_months": 6,
+  "leadership_track": "people managers, anyone flagged leadership_track = Y, and the top three 9-box boxes",
+  "protected_learning_pct": {"default": 5, "when_pace_at_least": 8, "reduced_to": 3, "never_below": 1},
+  "split_conversation_min_weeks": 4,
+  "helix": {
+    "born_rungs": 3,
+    "built_rungs": 7,
+    "experience_rungs": 5,
+    "coaching_rungs": 1,
+    "coaching_sessions_for_rung": 6,
+    "learning_rungs": 1,
+    "courses_for_rung": 1
+  },
+  "stamp_requires": ["reflection_logged = Y", "a named feedback source", "status = done"],
+  "high_potential_stamps_per_year": 2,
+  "leaders_built_kpi_weight_pct": 20,
+  "passport_experiences": {
+    "first_team": "First-time people leadership",
+    "fix_it": "Fix-it / turnaround",
+    "new_line": "Start-up / new line or site",
+    "cross_border": "Cross-border rotation (India ⇄ China)",
+    "scope_jump": "Scope jump",
+    "influence": "Influence without authority",
+    "crisis": "Crisis lead",
+    "failure_recovery": "Failure & recovery"
+  },
+  "pipeline_passages": ["self", "others", "managers", "function", "business"]
+}

@@ -1,0 +1,10 @@
+{
+  "name": "prism-pms",
+  "private": true,
+  "type": "module",
+  "description": "PRISM: a Performance Management System you can see (course project). No build step; this file only lets Node run the engine checks.",
+  "scripts": {
+    "data": "python3 scripts/generate_sample_data.py",
+    "check": "node scripts/check_engine.mjs"
+  }
+}

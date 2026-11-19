@@ -1,0 +1,30 @@
+{
+  "_about": "Ranking Decision Engine rules (PRISM v0.4 §8.2). Edit numbers here; the engine shows which rule fired.",
+  "min_pool_any_ranking": 20,
+  "min_pool_forced_distribution": 30,
+  "block_if_innovation_at_least": 4,
+  "block_if_interdependence_at_least": 4,
+  "measurability_at_least": 4,
+  "tiers_default": [
+    {"tier": "Top", "pct": 20},
+    {"tier": "Core", "pct": 70},
+    {"tier": "Bottom", "pct": 10}
+  ],
+  "cutthroat_pace_at_least": 8,
+  "tiers_cutthroat": [
+    {"tier": "Top", "pct": 15},
+    {"tier": "Core", "pct": 75},
+    {"tier": "Bottom", "pct": 10}
+  ],
+  "shield_months": 6,
+  "gate_fail_rating_cap": 2,
+  "verdicts": {
+    "forced": "Forced distribution for reward tiers",
+    "relative": "Relative calibration, no quotas",
+    "absolute": "Absolute standards + calibration"
+  },
+  "bottom_tier_action": {
+    "IN": "Documented improvement plan (PIP); worker vs non-worker rules differ",
+    "CN": "Training or reassignment first; a low rank alone is never an exit ground (LCL Art. 40(2), SPC Guiding Case No. 18)"
+  }
+}

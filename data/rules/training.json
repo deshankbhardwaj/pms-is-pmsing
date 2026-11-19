@@ -1,0 +1,23 @@
+{
+  "_about": "Training Engine rules (PRISM v0.4 §7 M8): three-level TNA → mechanism by gap type → Kirkpatrick evaluation.",
+  "gap_score_below": 2.5,
+  "mechanism_by_gap": {
+    "knowledge": ["e-learning", "classroom"],
+    "skill": ["OJT", "simulation", "apprenticeship"],
+    "behaviour": ["coaching", "mentoring", "rotation"],
+    "compliance": ["certified training with records"]
+  },
+  "kpi_course_map": {
+    "ASM-01": ["TC-04"], "ASM-02": ["TC-03"], "ASM-03": ["TC-02"], "ASM-04": ["TC-03"], "ASM-G1": ["TC-01"],
+    "QIN-01": ["TC-03"], "QIN-03": ["TC-03"],
+    "BRD-K1": ["TC-05"], "BRD-K2": ["TC-05"], "BRD-K4": ["TC-13"],
+    "SWE-K1": ["TC-07"], "SWE-K3": ["TC-07"],
+    "SAL-01": ["TC-08"], "SAL-02": ["TC-08"], "SAL-03": ["TC-08"], "SAL-G1": ["TC-09"],
+    "CSA-01": ["TC-14"], "CSA-02": ["TC-14"], "CSA-05": ["TC-14"],
+    "CFT-02": ["TC-06"], "CFT-03": ["TC-06"], "CFT-04": ["TC-02"],
+    "SCM-05": ["TC-13"],
+    "PLM-03": ["TC-10", "TC-11"], "PLM-04": ["TC-11"]
+  },
+  "competency_course_map": {"C1": ["TC-02"], "C3": ["TC-14"], "C5": ["TC-11"], "C6": ["TC-10", "TC-11"], "C7": ["TC-13", "TC-12"]},
+  "kirkpatrick_levels": {"1": "Reaction", "2": "Learning", "3": "Behaviour", "4": "Results"}
+}
