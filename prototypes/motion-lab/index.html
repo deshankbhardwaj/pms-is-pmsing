@@ -5,9 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>PRISM motion lab</title>
 <link rel="icon" href="data:,">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;1,9..144,600&family=Manrope:wght@400;600;700;800&display=swap">
+<!-- the same bundled fonts as the app (repo root vendor/fonts), so no font CDN is needed -->
+<link rel="stylesheet" href="../../vendor/fonts/fonts.css">
 <style>
 :root{
   --dark:#07080f; --light:#f4f1ea; --ink:#14151c; --muted:#6b6f80;
@@ -151,6 +150,9 @@ footer b{color:#fff}
 footer ul{margin:12px 0 0 18px}
 
 @media (max-width:860px){
+  .topbar{mix-blend-mode:normal;background:rgba(7,8,15,.9);backdrop-filter:blur(6px);padding:10px 14px}
+  .topbar .tag{font-size:10px;letter-spacing:.04em}
+  #scene{width:min(1200px,115vw);left:45%}
   .cards{grid-template-columns:repeat(2,minmax(130px,1fr));gap:10px}
   .card{padding:12px 12px 14px}.card h3{font-size:16px}.card p{display:none}
   .forge-inner{grid-template-columns:1fr;gap:6px;padding:56px 16px 16px;align-content:center}
@@ -369,8 +371,10 @@ footer ul{margin:12px 0 0 18px}
     var ty=230+k*55, tx=1240;
     el('line',{x1:ox,y1:oy,x2:tx,y2:ty,stroke:c,'stroke-width':10,opacity:.28,filter:'url(#soft)','class':'draw'},spectrumG);
     el('line',{x1:ox,y1:oy,x2:tx,y2:ty,stroke:c,'stroke-width':3.5,'class':'draw beam'},spectrumG);
-    var lx=ox+(tx-ox)*0.74, ly=oy+(ty-oy)*0.74-10;
-    var t=el('text',{x:lx,y:ly,fill:c,'font-size':16,'font-weight':800,'letter-spacing':'2','font-family':'Manrope, system-ui, sans-serif'},labelsG);
+    // narrow screens: labels nearer the prism and larger, so none is cut off at the right edge
+    var nar=window.matchMedia('(max-width:860px)').matches, f=nar?0.6:0.74, fs=nar?(innerWidth<500?28:22):16;
+    var lx=ox+(tx-ox)*f, ly=oy+(ty-oy)*f-10;
+    var t=el('text',{x:lx,y:ly,fill:c,'font-size':fs,'font-weight':800,'letter-spacing':'2','font-family':'Manrope, system-ui, sans-serif'},labelsG);
     t.textContent=STAGES[k].toUpperCase();
   });
   // prism shards (12 triangles that tile the prism exactly)

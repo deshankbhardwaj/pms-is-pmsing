@@ -6,9 +6,7 @@
 <title>PRISM · Performance Management System</title>
 <meta name="description" content="PRISM: a performance management system you can see. Course project, fictional data.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpolygon points='16,3 3,28 29,28' fill='%2314151c'/%3E%3Cpolygon points='16,9 8,25 24,25' fill='%238b5cf6'/%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;1,9..144,600&family=Manrope:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="vendor/fonts/fonts.css">
 <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
@@ -16,7 +14,7 @@
 
 <!-- ============ LANDING (M0) ============ -->
 <div id="landing">
-  <header class="l-top"><span>PRISM</span><span class="tag">Course project · fictional data</span></header>
+  <header class="l-top"><span>PRISM</span><span class="l-tag">Course project · fictional data</span></header>
   <section id="hero">
     <div class="stage">
       <div class="glow"></div>
@@ -44,7 +42,7 @@
         <circle id="flash" cx="600" cy="340" r="10" fill="#fff" opacity="0"/>
       </svg>
       <div class="hero-title"><h1 id="title">PRISM</h1><p>A performance management system you can see</p></div>
-      <div class="scroll-hint">Scroll</div>
+      <div class="scroll-hint"><div class="sh-in">Scroll</div></div>
       <div class="cards-wrap">
         <div class="cards-head">One core. Many lenses.<small>The prism splits into the modules of the PMS. Pick one, or take the tour.</small></div>
         <div class="l-cards" id="lcards"></div>
@@ -58,11 +56,11 @@
   </section>
   <section class="l-below">
     <div class="inner">
-      <div class="eyebrow" style="--mc:#8b5cf6">Choose your lens</div>
+      <div class="eyebrow" style="--mc:#8b5cf6;--mt:#7d52dd">Choose your lens</div>
       <h2>One central PMS. A smaller PMS for every industry.</h2>
       <p class="lead">Pick an industry and PRISM sets the defaults: pace, roles, KPIs, appraisal methods, ranking rules and rewards. This build is EV-first: the VoltBridge sample is fully built; the other industries arrive as presets.</p>
       <div class="lens-pick" id="lensPick"></div>
-      <p class="lead mt2 small">Fictional data. VoltBridge Mobility, its 256 people and their numbers are invented for an MDI Gurgaon course project. Nothing you load leaves your browser.</p>
+      <p class="lead mt2 small">Fictional data. VoltBridge Mobility, its 256 people and their numbers are invented for an MDI Gurgaon course project. Nothing you load is uploaded anywhere: it stays in this browser.</p>
     </div>
   </section>
 </div>
@@ -70,34 +68,35 @@
 <!-- ============ APP SHELL ============ -->
 <div id="app" class="hidden">
   <aside class="side" id="side">
-    <div class="brand" data-go="home" title="Back to the landing page">
-      <svg class="logo" viewBox="0 0 32 32"><polygon points="16,3 3,28 29,28" fill="#fff"/><polygon points="16,9 8,25 24,25" fill="#8b5cf6"/></svg>
+    <a class="brand" href="#home" title="Back to the landing page" aria-label="PRISM: back to the landing page">
+      <svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><polygon points="16,3 3,28 29,28" fill="#fff"/><polygon points="16,9 8,25 24,25" fill="#8b5cf6"/></svg>
       <b>PRISM</b>
-    </div>
+    </a>
     <div class="orgchip" id="orgchip"></div>
-    <nav class="nav" id="nav"></nav>
+    <nav class="nav" id="nav" aria-label="Modules"></nav>
     <div class="foot">All data fictional · built for an MDI Gurgaon PMS course project · spec v0.4</div>
   </aside>
   <div class="main">
     <div class="topbar">
-      <button class="btn light sm menu-btn" id="menuBtn">☰</button>
-      <div class="crumb" id="crumb"></div>
-      <select class="sel hide-sm" id="personaJump" title="Jump to a persona"></select>
-      <div class="seg" id="lensSeg" title="Country lens">
-        <button data-lens="home" class="on">Home rules</button>
-        <button data-lens="IN"><span class="code IN">IN</span></button>
-        <button data-lens="CN"><span class="code CN">CN</span></button>
+      <button class="btn light sm menu-btn" id="menuBtn" aria-label="Open the module menu" aria-controls="side" aria-expanded="false">☰</button>
+      <div class="crumb" id="crumb" aria-live="polite"></div>
+      <select class="sel persona-jump" id="personaJump" title="Jump to a persona" aria-label="Jump to a persona"></select>
+      <div class="seg lens-seg" id="lensSeg" role="group" aria-label="Country lens">
+        <button data-lens="home" class="on" aria-pressed="true" title="Each person under their home country's rules"><span class="lg">Home rules</span><span class="sm">Home</span></button>
+        <button data-lens="IN" aria-pressed="false" title="Everyone under India's rules" ><span class="code IN">IN</span><span class="sr-only"> lens: India</span></button>
+        <button data-lens="CN" aria-pressed="false" title="Everyone under China's rules" ><span class="code CN">CN</span><span class="sr-only"> lens: China</span></button>
       </div>
-      <button class="btn pri sm" id="tourBtn">▶ Tour</button>
+      <button class="btn pri sm" id="tourBtn" aria-label="Start the guided tour">▶<span class="tl"> Tour</span></button>
     </div>
-    <div class="content" id="content"></div>
+    <main class="content" id="content"></main>
   </div>
 </div>
+<div class="side-scrim" id="sideScrim"></div>
 
 <div class="scrim" id="scrim"></div>
-<aside class="drawer" id="drawer"><div class="dh" id="drawerHead"></div><div class="db" id="drawerBody"></div></aside>
-<div class="toast" id="toast"></div>
-<div class="changes" id="changes"><button class="x" id="changesX">×</button><h5>What changed</h5><ul id="changesList"></ul></div>
+<div class="drawer" id="drawer"><div class="dh" id="drawerHead"></div><div class="db" id="drawerBody"></div></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="changes" id="changes" role="status" aria-live="polite"><button class="x" id="changesX" aria-label="Close the What changed panel">×</button><h2 class="h5">What changed</h2><ul id="changesList"></ul></div>
 <canvas id="confetti"></canvas>
 <noscript><p style="padding:40px;font-family:sans-serif">PRISM needs JavaScript. Open it through a local web server (see README).</p></noscript>
 

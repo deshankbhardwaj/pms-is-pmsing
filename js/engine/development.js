@@ -8,8 +8,9 @@ const BOX = {
 };
 export function nineBox(e, res) {
   if (!res || res.composite === null) return null;
-  const perf = res.capped ? 'low' : res.composite >= 3.75 ? 'high' : res.composite >= 2.5 ? 'mid' : 'low';
-  const pot = num(e.potential) || 2;
+  const perf = res.capped || res.gatePassed === false ? 'low' : res.composite >= 3.75 ? 'high' : res.composite >= 2.5 ? 'mid' : 'low';
+  const p = num(e.potential);
+  const pot = p === null ? 2 : Math.min(3, Math.max(1, Math.round(p)));   // the validator rejects anything but 1, 2 or 3
   const [label, track] = BOX[`${pot}-${perf}`];
   return { performance: perf, potential: pot, label, track, topThree: ['Star', 'Future star', 'High performer'].includes(label) };
 }
@@ -18,7 +19,7 @@ export function tna(e, res, idx, rules) {
   const T = rules.training;
   const gaps = [];
   for (const i of res?.items || []) if (i.score !== null && i.score < T.gap_score_below) gaps.push({ level: 'person', source: i.name, kpi_id: i.kpi_id, score: i.score, courses: T.kpi_course_map[i.kpi_id] || [] });
-  for (const g of res?.gates || []) if (!g.passed) gaps.push({ level: 'person', source: g.name, kpi_id: g.kpi_id, score: null, courses: T.kpi_course_map[g.kpi_id] || [] });
+  for (const g of res?.gates || []) if (g.passed === false) gaps.push({ level: 'person', source: g.name, kpi_id: g.kpi_id, score: null, courses: T.kpi_course_map[g.kpi_id] || [] });
   const fbRows = (idx.fb.get(e.emp_id) || []).filter((r) => r.relationship === 'manager');
   const byComp = {};
   for (const r of fbRows) (byComp[r.comp_id] ||= []).push(Number(r.score));

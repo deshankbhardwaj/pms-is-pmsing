@@ -32,13 +32,22 @@ export function initLanding(go) {
   const COLORS = ['#ff5a5f', '#ff9f43', '#feca57', '#1dd1a1', '#48dbfb', '#5f7cff', '#a55eea'];
   const STAGES = ['Plan', 'Coach', 'Assess', 'Review', 'Reward', 'Develop', 'Renew'];
   const ox = 665, oy = 322;
-  COLORS.forEach((c, k) => {
+  const labels = COLORS.map((c, k) => {
     const ty = 230 + k * 55, tx = 1240;
     el('line', { x1: ox, y1: oy, x2: tx, y2: ty, stroke: c, 'stroke-width': 10, opacity: 0.28, filter: 'url(#soft)', class: 'draw' }, spectrumG);
     el('line', { x1: ox, y1: oy, x2: tx, y2: ty, stroke: c, 'stroke-width': 3.5, class: 'draw beam' }, spectrumG);
-    const t = el('text', { x: ox + (tx - ox) * 0.74, y: oy + (ty - oy) * 0.74 - 10, fill: c, 'font-size': 16, 'font-weight': 800, 'letter-spacing': '2', 'font-family': 'Manrope, system-ui, sans-serif' }, labelsG);
+    const t = el('text', { fill: c, 'font-weight': 800, 'letter-spacing': '2', 'font-family': 'Manrope, system-ui, sans-serif' }, labelsG);
     t.textContent = STAGES[k].toUpperCase();
+    return { t, tx, ty };
   });
+  // On tablets and phones the scene is narrower (see main.css), so the labels sit nearer the prism and are drawn larger.
+  const narrow = matchMedia('(max-width: 900px)');
+  const placeLabels = () => {
+    const [f, size] = narrow.matches ? [0.6, innerWidth < 500 ? 28 : 22] : [0.74, 16];
+    labels.forEach(({ t, tx, ty }) => { t.setAttribute('x', ox + (tx - ox) * f); t.setAttribute('y', oy + (ty - oy) * f - 10); t.setAttribute('font-size', size); });
+  };
+  placeLabels();
+  narrow.addEventListener?.('change', placeLabels);
   const P = { A: [600, 210], B: [470, 435], C: [730, 435], M1: [535, 322.5], M2: [665, 322.5], M3: [600, 435], P1: [600, 300], P2: [545, 380], P3: [655, 380], P4: [600, 410] };
   const TRIS = [['A', 'M1', 'P1'], ['A', 'P1', 'M2'], ['M1', 'P2', 'P1'], ['P1', 'P3', 'M2'], ['P1', 'P2', 'P4'], ['P1', 'P4', 'P3'], ['M1', 'B', 'P2'], ['B', 'M3', 'P2'], ['P2', 'M3', 'P4'], ['M2', 'P3', 'C'], ['P3', 'M3', 'C'], ['P3', 'P4', 'M3']];
   const vec = [];
@@ -75,10 +84,14 @@ export function initLanding(go) {
   };
 
   gsap.to('#progress', { scaleX: 1, ease: 'none', scrollTrigger: { start: 0, end: 'max', scrub: 0.3 } });
+  // Past the hero, the fixed header gets a solid bar, so "PRISM" and the fictional-data label never print over the text below.
+  // Created after the pinned hero (below), so its start accounts for the pin's extra scroll length.
+  const solidHeader = () => window.ScrollTrigger?.create({ trigger: '.l-below', start: 'top 64px', toggleClass: { targets: '.l-top', className: 'solid' } });
   if (RM) {
+    solidHeader();
     gsap.set(['#scene', '.hero-title', '.scroll-hint', '.glow'], { display: 'none' });
     gsap.set('.stage', { backgroundColor: '#f4f1ea' });
-    gsap.set([...cards, '.cards-head', '#lcta'], { opacity: 1 });
+    gsap.set([...cards, '.cards-head', '#lcta'], { autoAlpha: 1 });
     return;
   }
   requestAnimationFrame(f);
@@ -89,11 +102,11 @@ export function initLanding(go) {
     .to('#spectrum .draw', { strokeDashoffset: 0, duration: 1, ease: 'power3.out', stagger: 0.05 }, 1.0)
     .from('#labels text', { opacity: 0, x: -14, duration: 0.6, stagger: 0.06 }, 1.35)
     .from('.hero-title p', { opacity: 0, y: 10, duration: 0.8 }, 1.2)
-    .from('.scroll-hint', { opacity: 0, duration: 0.8 }, 1.8);
+    .from('.sh-in', { opacity: 0, duration: 0.8 }, 1.8);   // the inner part: the scroll timeline owns .scroll-hint itself
   gsap.to('#spectrum .beam', { opacity: 0.55, duration: 1.6, repeat: -1, yoyo: true, ease: 'sine.inOut', stagger: { each: 0.25, repeat: -1, yoyo: true }, delay: 2.4 });
   const tl = gsap.timeline({ scrollTrigger: { trigger: '#hero', start: 'top top', end: '+=2200', scrub: 0.8, pin: true, anticipatePin: 1, invalidateOnRefresh: true } });
   tl.to('.hero-title', { y: -90, opacity: 0, duration: 0.16 }, 0)
-    .to('.scroll-hint', { opacity: 0, duration: 0.05 }, 0)
+    .to('.scroll-hint', { autoAlpha: 0, duration: 0.05 }, 0)
     .to(shards, { attr: { 'stroke-opacity': 0.9 }, duration: 0.1, stagger: 0.008 }, 0.1)
     .to('#outline', { attr: { 'stroke-opacity': 0.25 }, duration: 0.08 }, 0.16)
     .to('#prism', { keyframes: { x: [0, -7, 6, -5, 4, -2, 0] }, duration: 0.14, ease: 'none' }, 0.18)
@@ -105,11 +118,13 @@ export function initLanding(go) {
     .fromTo('#flood', { attr: { r: 0 } }, { attr: { r: 1500 }, duration: 0.16, ease: 'power2.in' }, 0.33)
     .to('.glow', { opacity: 0, duration: 0.1 }, 0.32)
     .set('.stage', { backgroundColor: '#f4f1ea' }, 0.49)
-    .fromTo(cards, { x: (i, c) => centerOffset(c).x, y: (i, c) => centerOffset(c).y, scale: 0.15, rotation: () => (rnd() * 2 - 1) * 35, opacity: 0 },
-      { x: 0, y: 0, scale: 1, rotation: 0, opacity: 1, duration: 0.4, stagger: 0.035, ease: 'power3.out' }, 0.48)
-    .fromTo('.cards-head', { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.18 }, 0.74)
-    .fromTo('#lcta', { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.16 }, 0.82)
+    // autoAlpha, not opacity: until they appear the cards and buttons are hidden, so they can't be clicked or tabbed to
+    .fromTo(cards, { x: (i, c) => centerOffset(c).x, y: (i, c) => centerOffset(c).y, scale: 0.15, rotation: () => (rnd() * 2 - 1) * 35, autoAlpha: 0 },
+      { x: 0, y: 0, scale: 1, rotation: 0, autoAlpha: 1, duration: 0.4, stagger: 0.035, ease: 'power3.out' }, 0.48)
+    .fromTo('.cards-head', { autoAlpha: 0, y: 24 }, { autoAlpha: 1, y: 0, duration: 0.18 }, 0.74)
+    .fromTo('#lcta', { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.16 }, 0.82)
     .to({}, { duration: 0.12 });
+  solidHeader();
   gsap.set(cards, { transformPerspective: 800 });
   cards.forEach((c) => {
     const rx = gsap.quickTo(c, 'rotationX', { duration: 0.45, ease: 'power3' }), ry = gsap.quickTo(c, 'rotationY', { duration: 0.45, ease: 'power3' });

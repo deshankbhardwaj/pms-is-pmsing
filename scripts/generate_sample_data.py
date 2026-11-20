@@ -512,7 +512,7 @@ for i in range(16):
 arjun = add_emp("SAL", "IN", "Bengaluru", "D-IN-SAL", sm_south, name="Arjun Mehta", grade="A2", r=4.7, potential=3,
                 hire=date(2022, 1, 10), role_start=date(2022, 1, 10), flight="M")
 persona("arjun", arjun, "Sales Consultant, Bengaluru. Top 5% on the leaderboard → bonus tier 1, Club trip, "
-                        "9-box future star → development toward sales manager.")
+                        "9-box Star → development toward sales manager.")
 karan = add_emp("SAL", "IN", "Delhi", "D-IN-SAL", sm_north, name="Karan Sethi", grade="A2", r=4.4, potential=2,
                 hire=date(2022, 6, 1), role_start=date(2022, 6, 1), flight="M")
 persona("karan", karan, "Sales Consultant, Delhi. #2 on units but fails the fair-selling gate (fake test-drive "
@@ -605,6 +605,15 @@ for e in employees:
             noise = 0 if eid in PERSONA_KPI and kid in PERSONA_KPI[eid] else rng.gauss(0, 0.25)
             s = max(0.6, min(5.4, base + noise))
             kpi_actuals.append(dict(emp_id=eid, kpi_id=kid, period=per, actual=value_for_score(k, s)))
+
+# One Assembly line beats standard output, so plant gainsharing pays out on the sample (QA report L25).
+# A post-step, so it uses no random numbers and every other value stays as it was.
+GAIN_LINE_UPLIFT = 6.5      # percentage points of standard output, added for Ritu's teammates
+ritu_mgr = next(e["manager_id"] for e in employees if e["emp_id"] == ritu)
+gain_line = {e["emp_id"] for e in employees if e["role_id"] == "ASM" and e["manager_id"] == ritu_mgr and e["emp_id"] != ritu}
+for a in kpi_actuals:
+    if a["kpi_id"] == "ASM-01" and a["emp_id"] in gain_line:
+        a["actual"] = round(min(125.0, a["actual"] + GAIN_LINE_UPLIFT), 1)
 
 # --------------------------------------------------------------------------------------------
 # 360 / manager behaviour ratings (BARS 1-5)
@@ -886,22 +895,28 @@ ALLOWED = {
     ("Leadership_Profile", "pipeline_passage"): "self,others,managers,function,business",
     ("Training_Catalogue", "gap_type"): "knowledge,skill,behaviour,compliance",
     ("Training_Catalogue", "bucket_70_20_10"): "70,20,10", ("Training_Records", "l3_observed"): "Y,N",
-    ("Reward_Policy", "compa_band"): "low,mid,high",
+    ("Reward_Policy", "compa_band"): "low,mid,high", ("Reward_Policy", "country"): "IN,CN",
+    ("Departments", "country"): "IN,CN,IN;CN",
 }
 
 README_ROWS = [
     ("PRISM input workbook", ""),
     ("What this is", "One sheet per part of a PMS. Upload it in PRISM's Data Hub; it is read in your browser and never sent anywhere."),
-    ("Which cells to edit", "Every row under the dark header row on each sheet. The yellow-tinted grey row in the template is an example: overwrite or delete it."),
-    ("Do not rename", "Sheet names and header cells. PRISM matches them exactly."),
+    ("Which cells to edit", "Every row under the dark header row on each sheet. The tinted row in the blank template is an example: overwrite or delete it. If it is left unchanged, the Data Hub skips it."),
+    ("Do not rename", "Sheet names and header cells. PRISM matches them (letter case is ignored)."),
+    ("Upload", "The whole workbook (.xlsx); one sheet saved as CSV and named after it (Employees.csv replaces the Employees sheet); or the file from the Data Hub's \"Data as JSON\" button."),
     ("IDs", "emp_id, role_id, kpi_id, comp_id, course_id and dept_id must be unique. Every manager_id, role_id, kpi_id etc. must exist on its own sheet."),
     ("Weights", "KPI weight_pct must add up to 100 for each role (Gate rows have weight 0)."),
     ("Targets", "threshold < target < stretch when polarity = higher; threshold > target > stretch when polarity = lower. Gate rows: actual 1 = pass, 0 = fail."),
     ("OKR key results", "type = KR, actual is progress 0 to 1 (0.7 counts as met)."),
     ("Lists", "Columns with fixed values offer a drop-down (e.g. polarity: higher/lower; country: IN/CN; Y/N fields)."),
     ("Lists in a cell", "Separate several values with a semicolon, e.g. responsibilities, role_ids, countries."),
-    ("Dates", "YYYY-MM-DD."),
-    ("Money", "Local currency (INR or CNY). Training cost is in INR. All sample figures are fictional placeholders."),
+    ("Dates", "YYYY-MM-DD. hire_date and role_start_date can't be after the review date."),
+    ("Review date", "Months in role are counted to the end of the latest KPI_Actuals period (2026-Q4 → 2026-12-31). To set it yourself, add a review_date column (YYYY-MM-DD) to Org."),
+    ("Money", "Local currency: INR for IN, CNY for CN. Training cost is in INR. All sample figures are fictional placeholders."),
+    ("Pay", "base_pay and pay_range_mid are yearly amounts in the same unit (not thousands). base_pay ÷ pay_range_mid (the compa-ratio) must be 0.5 to 2.0. Each grade needs a Reward_Policy row for its country."),
+    ("Potential", "1, 2 or 3 (low, medium, high)."),
+    ("Gate data", "A person with no rows for a gate gets no penalty: the gate shows as \"no data\"."),
     ("Reward_Policy", "Two kinds of row: grade rows (country, grade, target_bonus_pct, merit_budget_pct, learning_wallet) and matrix rows (country, rating, multiplier, compa_band, merit_pct)."),
     ("Leadership_Profile", "Optional private trait self-assessment fields may be added, but PRISM never uses them in ratings, ranking, promotion or pay."),
     ("Fictional data", "VoltBridge Mobility, its people and its numbers are invented for a course project."),
@@ -924,7 +939,7 @@ def add_validations(ws, sheet, cols, last_row):
             continue
         letter = get_column_letter(cols.index(col) + 1)
         dv = DataValidation(type="list", formula1=f'"{vals}"', allow_blank=True)
-        dv.add(f"{letter}2:{letter}{max(last_row, 500)}")
+        dv.add(f"{letter}2:{letter}{max(last_row, 5000)}")
         ws.add_data_validation(dv)
 
 

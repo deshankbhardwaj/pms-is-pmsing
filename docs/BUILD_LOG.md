@@ -99,3 +99,72 @@ Engine change: `built70.js` accepts two switches (`shield_enabled`, `stamp_needs
 
 ### Next
 Deshank runs it locally and reviews. Then: GitHub (private repo + Pages), the ⚠️ source checks, and the pharma (Helixa) preset.
+
+---
+
+## 2026-11-20 · QA fix pass (PRISM_QA_report.pdf)
+
+Worked through every item in the QA report: the 106 numbered bugs (C1–C3, H1–H11, M1–M35, L1–L47, X1–X10), the vision-slider section, the "suspected" list and the motion-lab notes P1–P3. The app was already live on GitHub Pages; this entry is the fix pass on top of it.
+
+### What changed
+- **Engine.** The leadership track now includes the top three 9-box boxes (judged on standard weights first, so the track can't flip itself). Scores come from unrounded item scores; ties sort on the unrounded composite, then results, then ID. A missing gate is "no data" with no penalty. Compa 0.90 is mid. The kicker goes to the top 20% who passed the gate. The learning wallet is fixed by grade plus top-ups, and is counted in total rewards. The bottom-tier step reads Country_Config (one source of truth), and pace adds the PIP length. The bottom tier can't swallow a whole pool when it rounds to 0.
+- **Strategy DNA does what it says** (new `data/rules/dna.json`). Innovation ≥ 7 scores key results as OKRs, otherwise straight-line on the sheet's thresholds. Cost focus ≥ 8 rescales bonuses to the pool (strict guard), otherwise it only warns. Team orientation ≥ 7 raises the gainsharing share to 40%. Risk appetite ≤ 4 caps a failed gate at 1. Customer intimacy ≥ 8 weights "Customer" KPIs ×1.5. Pace sets the check-in/review rhythm and the India PIP length, and every screen uses that one rhythm. "What changed" lists effects across the whole app.
+- **Data Hub.** Uploads of other organisations work: the sample personas are kept only when the organisation and the people match. The review date for a new organisation is the end of its latest KPI_Actuals period. The validator, now in `js/engine/validate.js` so Node can test it, checks:
+  - potential 1/2/3
+  - base pay and range midpoint, and a compa-ratio of 0.5–2.0
+  - each grade against Reward_Policy, and currency against country
+  - numeric actuals; KR actuals 0–1; gate actuals 0/1; values far out of range
+  - progress 0–100, and dates not after the review date
+  - every reference on the optional sheets, own-manager and reporting loops
+  - weights to 0.01
+
+  Errors carry real Excel row numbers.
+  
+  Other Data Hub changes:
+  - Unreadable files, 0-byte files, semicolon CSVs, the blank template and the Results workbook each get one plain message.
+  - CSV names match sheets loosely (employees.csv, Employees (1).csv).
+  - JSON import added: the "Data as JSON" export loads back in.
+  - The Results export adds commission, kicker, total variable pay, gainsharing, learning wallet, total rewards, the bottom-tier step and a Settings sheet.
+  - Work is saved in this browser, with "Forget saved work"; reloading the sample clears it.
+  - "Use this data" can't leave the app half-switched.
+- **Screens.**
+  - Drawer links go where they say: Review conversation opens the conversation tab, Forge shows the clicked person (tagged if off the track), and Country Lens shows that person.
+  - The drawer is a proper dialog (Esc, focus trap, URL in sync).
+  - Country Lens: "Off" really applies India's rules, and edits are checked and reach Ranking.
+  - Smaller fixes: the KPI gate row shows a pass/fail card, and out-of-range weights can't be applied. Listeners and tweens are cleaned up between screens, and Play the year ends on Dec. The Consultant skips executive rows and builds its advice from pace. People search trims spaces and says "No matches". Uploaded values are escaped everywhere (XSS).
+- **Tour.**
+  - Clear panes block the dimmed page, and a click there pauses the tour, as does any navigation.
+  - Double-clicks can't skip a step. Esc closes it, "↺ Start over" is on every step, and ▶ Tour resumes straight after closing.
+  - On phones the card docks under the target. Step 7 docks left of the board, and step 8 shows gainsharing, sales tiers and recognition.
+  - The final card is undimmed, with "Switch industry". Steps whose persona isn't in the data are skipped.
+- **Layout, accessibility, print.**
+  - No inline grid columns left; the phone and tablet fixes for H9–H11 and M24–M35.
+  - The top bar wraps to two rows on phones, and the side menu has a scrim.
+  - The landing's hidden cards and buttons can't be clicked or tabbed to. Its header turns solid past the hero, and the spectrum labels fit narrow screens.
+  - One `<main>` and an `<h1>` per screen; labelled controls; AA contrast (darker accent text and rating chips); 44 px touch targets; a print layout (the Consultant's report is 3 A4 pages).
+  - The parked drawer and "What changed" panel are fully hidden.
+- **Data.** Arjun's story says "9-box Star". Ritu's line averages 104.2% of standard output, so plant gainsharing pays ₹51,617 on the sample (a no-random post-step in the generator: only those 76 actuals change). Template drop-downs run to row 5,000, Departments and Reward_Policy have country lists, and the README sheet explains pay, potential, review date and gate data.
+- **Fonts** are bundled in `vendor/fonts/` (Fraunces and Manrope, SIL OFL): no font CDN, same look offline.
+- **Motion lab** (`prototypes/motion-lab/`) P1–P3: a solid phone header, spectrum labels that fit, and the bundled fonts.
+
+### How it was checked
+- `node scripts/check_engine.mjs`: 37/37 pass (24 persona checks + 13 validator checks).
+- Headless Chrome (Playwright), against `python3 -m http.server`:
+  - **Data tests:** C1 (3-role Acme, VoltBridge without Sales, 1 employee), C2, H5, M3 (script injected in every text field, none ran), M21, M22, L26, L28–L30, the filled and blank templates, the H7 round trip (export → import, reload restores, Results workbook refused) and H8.
+  - **UI tests:** C3, X5, M4, M10, L1, M11, H2–H4, L6, M8, L8, M1, M2, M12, M14, M15, M16, the full tour (M6, M7, L2, L3, X3, X4, X6), L12 (no listener or tween build-up after 30 screen visits), L13, L34, X1, L43 and L44.
+  - **Layout tests** at 844×390, 390, 360, 768 and 1024: H9–H11, M23–M35, L38, L40, L41, X7–X9, and no screen scrolls sideways.
+  - **Smoke test:** every screen at six sizes, with no console errors and no NaN, undefined or `${` in the text.
+  - **Accessibility and print:** axe-core found no serious or critical issues on the 15 screens or the drawer. The Consultant's report prints on 3 A4 pages, and Forge prints dark-on-white.
+
+### Differences from v0.4 (to fold into v0.5)
+15. The Strategy DNA thresholds above, from `data/rules/dna.json`. Risk appetite was specified as "gates on by default". It is built as a stricter gate cap instead, so no gates are invented for roles that have none.
+16. Leadership track = people managers, anyone flagged, and the top three 9-box boxes (judged on standard weights).
+17. Missing gate data means no penalty: shown as "no data", plus a Data Hub warning.
+18. The learning wallet is a grade amount plus 50% for high potential plus 25% per training gap (max 2), and is counted in total rewards.
+19. Work is kept in this browser's storage (spec §10.1 "Saved in this browser"); the JSON export loads back in.
+20. The review date of an uploaded organisation is the end of its latest KPI_Actuals period, or an optional Org `review_date` column.
+21. Item 10 above is superseded: Ritu's line now beats standard (104.2%), and the pool is ₹51,617.
+22. The tour skips steps whose persona isn't in the loaded data.
+
+### Open decision
+- **Commission on a failed gate:** Karan still gets full commission on his bookings. The spec removes only the top-tier reward and the kicker, so this was left as it is. Decide whether a failed fair-selling gate should also hold back commission.

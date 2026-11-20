@@ -7,8 +7,11 @@ export function lens(idx, country) {
 export function compare(idx, keys) {
   return (keys || Object.keys(idx.country)).map((k) => ({ key: k, IN: idx.country[k]?.IN, CN: idx.country[k]?.CN, note: idx.country[k]?.note }));
 }
-export function bottomTierAction(idx, country) {
-  const c = idx.country.bottom_tier_action;
-  const code = idx.country.bottom_tier_action_code?.[country];
-  return { code, text: c?.[country] };
+// One source of truth: the Country_Config sheet (editable in the Country Lens). Pace sets the PIP length.
+export function bottomTierAction(idx, country, cadence, fallback = {}) {
+  const raw = String(idx.country.bottom_tier_action?.[country] ?? '').trim();
+  const code = String(idx.country.bottom_tier_action_code?.[country] ?? '').trim() || (country === 'CN' ? 'train_reassign' : 'pip');
+  let text = raw || fallback[country] || (code === 'pip' ? 'Documented improvement plan (PIP)' : 'Training or reassignment first');
+  if (code === 'pip' && cadence?.pip_days && !text.includes(cadence.pip_days)) text = `${text}, ${cadence.pip_days}`;
+  return { code, text };
 }

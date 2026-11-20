@@ -8,6 +8,8 @@ export const sd = (a) => {
   const m = mean(a);
   return Math.sqrt(a.reduce((s, x) => s + (x - m) ** 2, 0) / (a.length - 1));
 };
+// The "leaders built" KPI for people managers (spec §8.6 rule 5); the Forge can switch it off.
+export const isLeadersBuiltKpi = (k) => k.kpi_id === 'PLM-03' || /leaders built/i.test(String(k.kpi_name));
 export const round = (x, d = 2) => (x === null || x === undefined ? null : Math.round(x * 10 ** d) / 10 ** d);
 export function monthsBetween(isoA, isoB) {
   const a = new Date(isoA), b = new Date(isoB);

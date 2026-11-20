@@ -25,7 +25,7 @@ export const VERDICT_COLOR = { forced: '#e5484d', relative: '#e0a800', absolute:
 export const VERDICT_SHORT = { forced: 'Forced tiers', relative: 'Relative calibration', absolute: 'Absolute standards' };
 
 export function pageHead({ eyebrow, title, sub }) {
-  return `<header class="ph"><div class="eyebrow">${esc(eyebrow)}</div><h2 class="t">${title}</h2>${sub ? `<p class="sub">${sub}</p>` : ''}</header>`;
+  return `<header class="ph"><div class="eyebrow">${esc(eyebrow)}</div><h1 class="t">${title}</h1>${sub ? `<p class="sub">${sub}</p>` : ''}</header>`;
 }
 
 // split headings into words and lift them out of a mask
@@ -59,7 +59,7 @@ export function splitWords(h) {
 // Entrance motion for a freshly rendered page
 export function enter(root) {
   if (RM || !gsap) return;
-  const h = root.querySelector('h2.t');
+  const h = root.querySelector('.ph .t');
   if (h) { splitWords(h); gsap.from(h.querySelectorAll('.wi'), { yPercent: 115, duration: 0.8, ease: 'power4.out', stagger: 0.05 }); }
   gsap.from(root.querySelectorAll('.ph .eyebrow, .ph .sub'), { opacity: 0, y: 10, duration: 0.6, stagger: 0.08, delay: 0.1 });
   const cards = root.querySelectorAll('.card, .l-card');
@@ -93,42 +93,107 @@ export function toast(html, ms = 3200) {
   const t = $('#toast');
   t.innerHTML = html;
   clearTimeout(toastT);
-  if (gsap) gsap.to(t, { opacity: 1, y: 0, duration: 0.35, ease: 'power3.out' });
+  if (gsap) gsap.to(t, { autoAlpha: 1, y: 0, duration: 0.35, ease: 'power3.out' });
   else t.style.opacity = 1;
-  toastT = setTimeout(() => { if (gsap) gsap.to(t, { opacity: 0, y: 40, duration: 0.3 }); else t.style.opacity = 0; }, ms);
+  toastT = setTimeout(() => { if (gsap) gsap.to(t, { autoAlpha: 0, y: 40, duration: 0.3 }); else t.style.opacity = 0; }, ms);
 }
 
+// Person drawer: a modal dialog. Esc, × and the scrim close it; focus moves in, stays in, and returns.
+let drawerOpen = false, lastFocus = null, onDrawerClosed = null;
+const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea, [tabindex]:not([tabindex="-1"])';
+function drawerKeys(e) {
+  if (!drawerOpen) return;
+  if (e.key === 'Escape') { e.preventDefault(); closeDrawer(); return; }
+  if (e.key !== 'Tab') return;
+  const f = [...$('#drawer').querySelectorAll(FOCUSABLE)].filter((x) => x.offsetParent !== null);
+  if (!f.length) return;
+  const first = f[0], last = f[f.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+}
+export const drawerIsOpen = () => drawerOpen;
 export function openDrawer(headHtml, bodyHtml, onReady) {
+  const d = $('#drawer');
+  if (!drawerOpen) lastFocus = document.activeElement;
   $('#drawerHead').innerHTML = `${headHtml}<button class="x" id="drawerX" aria-label="Close">×</button>`;
   $('#drawerBody').innerHTML = bodyHtml;
-  $('#drawerX').onclick = closeDrawer;
-  $('#scrim').onclick = closeDrawer;
-  gsap.to('#drawer', { xPercent: 0, duration: RM ? 0 : 0.45, ease: 'power3.out' });
+  $('#drawerBody').scrollTop = 0;
+  $('#drawerX').onclick = () => closeDrawer();
+  $('#scrim').onclick = () => closeDrawer();
+  d.inert = false; d.removeAttribute('aria-hidden');
+  const app = $('#app'); if (app) app.inert = true;
+  drawerOpen = true;
+  document.dispatchEvent(new CustomEvent('prism:drawer-open'));   // the guided tour pauses itself
+  gsap.set(d, { visibility: 'visible' });
+  gsap.to(d, { xPercent: 0, duration: RM ? 0 : 0.45, ease: 'power3.out' });
   gsap.to('#scrim', { opacity: 1, duration: 0.3, pointerEvents: 'auto' });
   const body = $('#drawerBody');
   if (onReady) onReady(body);
   if (!RM) gsap.from(body.children, { opacity: 0, y: 14, stagger: 0.05, duration: 0.45, delay: 0.1 });
   body.querySelectorAll('.bar>i[data-w]').forEach((el) => gsap.to(el, { width: `${el.dataset.w}%`, duration: 0.8, delay: 0.3 }));
+  $('#drawerX').focus({ preventScroll: true });
 }
-export function initOverlays() {
+export function initOverlays(opts = {}) {
+  onDrawerClosed = opts.onDrawerClosed || null;
+  const d = $('#drawer');
+  d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true'); d.setAttribute('aria-labelledby', 'drawerTitle');
+  d.inert = true; d.setAttribute('aria-hidden', 'true');
+  document.addEventListener('keydown', drawerKeys);
   // CSS parks these off-screen with a % transform; reset it so GSAP owns the transform through xPercent / yPercent only
-  gsap.set('#drawer', { x: 0, xPercent: 105 });
-  gsap.set('#toast', { xPercent: -50, x: 0, y: 40, left: '50%' });
-  gsap.set('#changes', { y: 0, yPercent: 130 });
+  gsap.set(d, { x: 0, xPercent: 105, visibility: 'hidden' });
+  gsap.set('#toast', { xPercent: -50, x: 0, y: 40, left: '50%', autoAlpha: 0 });
+  gsap.set('#changes', { y: 0, yPercent: 30, autoAlpha: 0 });
 }
-export function closeDrawer() {
-  gsap.to('#drawer', { xPercent: 105, duration: RM ? 0 : 0.35, ease: 'power3.in' });
+// silent: closed by the app itself (route change, a button that navigates), so the address bar is not touched
+export function closeDrawer({ silent = false } = {}) {
+  if (!drawerOpen) return;
+  drawerOpen = false;
+  const d = $('#drawer');
+  // hidden once parked, so its shadow never shows at the right edge of the screen
+  gsap.to(d, { xPercent: 105, duration: RM ? 0 : 0.35, ease: 'power3.in', onComplete: () => { if (!drawerOpen) gsap.set(d, { visibility: 'hidden' }); } });
   gsap.to('#scrim', { opacity: 0, duration: 0.3, pointerEvents: 'none' });
+  d.inert = true; d.setAttribute('aria-hidden', 'true');
+  const app = $('#app'); if (app) app.inert = false;
+  if (lastFocus && document.contains(lastFocus) && !silent) lastFocus.focus({ preventScroll: true });
+  lastFocus = null;
+  if (!silent && onDrawerClosed) onDrawerClosed();
+}
+
+// Keyboard: anything clickable that is not a native control becomes focusable and works with Enter / Space.
+const CLICKABLE = '[data-person], [data-box], [data-pool], tr.click, label.drop, [data-kbd]';
+export function makeKeyboardFriendly(root) {
+  root.querySelectorAll(CLICKABLE).forEach((el) => {
+    if (/^(BUTTON|A|INPUT|SELECT|TEXTAREA|OPTION)$/.test(el.tagName)) return;
+    // A row that holds its own controls (a weight input, say) can't itself be a button: its first cell takes the
+    // keyboard role instead, and a click there still reaches the row's handler.
+    let t = el;
+    if (el.querySelector('input,select,textarea,button,a[href]')) {
+      t = el.querySelector(':scope > td, :scope > th');
+      if (!t || t.querySelector('input,select,textarea,button,a[href]')) return;
+    }
+    if (!t.hasAttribute('tabindex')) t.tabIndex = 0;
+    if (!t.hasAttribute('role')) t.setAttribute('role', 'button');
+  });
+}
+export function bindKeyboardActivation(doc) {
+  doc.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const el = e.target;
+    if (!(el instanceof HTMLElement) || el.getAttribute('role') !== 'button' || /^(BUTTON|A|INPUT|SELECT|TEXTAREA)$/.test(el.tagName)) return;
+    e.preventDefault();
+    el.click();
+  });
 }
 
 let changesT;
+const hideChanges = () => gsap.to('#changes', { yPercent: 30, autoAlpha: 0, duration: RM ? 0 : 0.3 });
 export function showChanges(items) {
   if (!items.length) return;
   $('#changesList').innerHTML = items.map((i) => `<li>${i}</li>`).join('');
-  $('#changesX').onclick = () => gsap.to('#changes', { yPercent: 130, duration: 0.3 });
-  gsap.to('#changes', { yPercent: 0, duration: RM ? 0 : 0.5, ease: 'power3.out' });
+  $('#changesX').onclick = hideChanges;
+  gsap.to('#changes', { yPercent: 0, autoAlpha: 1, duration: RM ? 0 : 0.5, ease: 'power3.out' });
   clearTimeout(changesT);
-  changesT = setTimeout(() => gsap.to('#changes', { yPercent: 130, duration: 0.4 }), 9000);
+  changesT = setTimeout(hideChanges, 10000);
 }
 
 // Confetti burst (Rewards)
@@ -170,4 +235,17 @@ export function download(name, blob) {
   a.href = URL.createObjectURL(blob); a.download = name;
   document.body.appendChild(a); a.click();
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+
+// A darker shade of an accent colour that reads as text on white and on the paper background (WCAG AA, 4.5:1).
+const _lum = (h) => { const n = String(h).replace('#', ''); const c = [0, 2, 4].map((i) => parseInt(n.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
+const _ratio = (a, b) => { const x = _lum(a), y = _lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+export function textOn(hex, min = 4.5) {
+  if (!/^#[0-9a-f]{6}$/i.test(String(hex))) return hex;
+  const n = hex.slice(1);
+  for (let k = 1; k > 0.05; k -= 0.02) {
+    const c = `#${[0, 2, 4].map((i) => Math.round(parseInt(n.slice(i, i + 2), 16) * k).toString(16).padStart(2, '0')).join('')}`;
+    if (_ratio(c, '#ffffff') >= min && _ratio(c, '#f4f1ea') >= min) return c;
+  }
+  return '#14151c';
 }

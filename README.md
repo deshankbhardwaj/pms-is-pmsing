@@ -9,19 +9,19 @@
 - **This README changes in only three places:** the current-state table, the version list (append a row) and the open questions.
 - Older versions stay readable, so a dropped idea (e.g. the v0.1 live-deck plan) can always be recovered.
 
-## Current state (2026-11-19)
+## Current state (2026-11-20)
 
 | | |
 |---|---|
 | What | A Performance Management System as an online web app. App only, no live presentation; it must explain itself |
 | Owner | Deshank (MDI Gurgaon, PGDM-HRM 2026–28) + group (TBD) |
-| Phase | **EV build complete, running locally.** All 15 screens (M0–M13 + People) and the 9-step guided tour work on VoltBridge; tested in Chrome on desktop and phone sizes with no errors. Not on GitHub yet. Next: Deshank's local review, then GitHub, then pharma |
+| Phase | **EV build live on GitHub Pages** (repo `deshankbhardwaj/pms-is-pmsing`). All 15 screens (M0–M13 + People) and the 9-step guided tour work on VoltBridge and on uploaded organisations. **QA report fixed (20 Nov):** all 106 bugs, the vision sliders, the suspected items and the motion-lab notes; see the build log. Next: the open decision in the build log (commission on a failed gate), the ⚠️ source checks, then pharma |
 | Run it | Double-click **`start-prism.command`** (opens http://localhost:8000). Or in this folder: `python3 -m http.server 8000`. It does not work by double-clicking `index.html` |
 | Build log | [docs/BUILD_LOG.md](docs/BUILD_LOG.md): what's built, how it was checked, where it differs from the spec |
 | Build order | **EV (VoltBridge) first, then pharma (Helixa)**, both on one engine |
 | Countries | India and China only |
 | Signature idea | Born 30 · Built 70: Leadership Forge (helix + experience passport) |
-| Hosting | GitHub Pages, from a private repo until close to submission; Claude artifacts only for previews (proposed) |
+| Hosting | GitHub Pages, served from the repo root (`deshankbhardwaj/pms-is-pmsing`); Claude artifacts only for previews |
 | 3D | Three.js in the app; Blender only for an optional hero asset (proposed) |
 | Deadline | Not confirmed; working to **3 Dec 2026**, buffer to 8 Dec |
 | Whiteboard | [PRISM: PMS app plan](https://claude.ai/artifact/XAnkMVKevDwPAjMGCDgWg3) |

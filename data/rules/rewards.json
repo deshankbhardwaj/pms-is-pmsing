@@ -67,11 +67,15 @@
     "quarterly_target_units": {
       "IN": 24,
       "CN": 30
-    }
+    },
+    "kicker_top_pct": 20,
+    "_kicker": "Top-20% kicker (spec §8.4): paid to the top 20% of the ranked sales pool who passed the fair-selling gate, as a % of their commission."
   },
   "gainsharing": {
     "pool_share_of_savings_pct": 30,
-    "split": "attendance-adjusted hours"
+    "split": "attendance-adjusted hours",
+    "value_of_extra_output_share_of_payroll": 0.5,
+    "_about": "Savings = (average output % above standard) × line payroll × value_of_extra_output_share_of_payroll (placeholder: each 1% of extra output is worth 0.5% of the line's payroll). The pool is pool_share_of_savings_pct of the savings (Strategy DNA team orientation can raise it, see dna.json), split by attendance-adjusted hours."
   },
   "rnd": {
     "patent_filing_bonus": {
@@ -83,5 +87,12 @@
       "CN": 15000
     }
   },
-  "budget_guard": true
+  "budget_guard": true,
+  "learning_wallet": {
+    "_about": "Spec §8.4: fixed per head (Reward_Policy learning_wallet) + top-up by potential and capability gap. Counted in total rewards.",
+    "enabled": true,
+    "topup_high_potential_pct": 50,
+    "topup_per_gap_pct": 25,
+    "max_gaps_counted": 2
+  }
 }

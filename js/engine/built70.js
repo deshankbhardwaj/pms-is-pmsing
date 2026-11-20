@@ -8,19 +8,30 @@ export function isShielded(e, idx, b70) {
   return { shielded: on && (months < b70.rampup_months || lp?.on_stretch === 'Y'), monthsInRole: Math.round(months * 10) / 10, onStretch: lp?.on_stretch === 'Y' };
 }
 
-export function isLeadershipTrack(e, idx) {
+// Leadership track (v0.4 §8.6 rule 1): people managers (role flag), anyone flagged in the data
+// (Leadership_Profile or meta.leadership_track_ids), and the top three 9-box boxes.
+// The 9-box depends on the weights, so it is judged once on standard weights (idx.boxTrack, set in runAll).
+export function leadershipReason(e, idx) {
   const role = idx.role.get(e.role_id);
-  return role?.leadership_track === 'Y' || idx.lp.has(e.emp_id) || (idx.meta.leadership_track_ids || []).includes(e.emp_id);
+  if (role?.leadership_track === 'Y') return 'People manager';
+  if (idx.lp.has(e.emp_id) || (idx.meta.leadership_track_ids || []).includes(e.emp_id)) return 'Flagged for the leadership track';
+  if (idx.boxTrack?.has(e.emp_id)) return 'Top-three 9-box box (judged on standard weights)';
+  return null;
+}
+export function isLeadershipTrack(e, idx) {
+  return leadershipReason(e, idx) !== null;
 }
 
 export function weightsFor(e, idx, b70) {
   const sh = isShielded(e, idx, b70);
+  const g = (t) => b70.weights[t].growth;
   if (sh.shielded) {
     return { track: 'rampup', weights: b70.weights.rampup,
-      why: sh.onStretch ? 'On a stretch assignment: results count less, growth counts more' : `In role ${sh.monthsInRole} months (< ${b70.rampup_months}): ramp-up weights` };
+      why: sh.onStretch ? `On a stretch assignment: results count less, growth carries ${g('rampup')}%` : `In role ${sh.monthsInRole} months (< ${b70.rampup_months}): ramp-up weights, growth carries ${g('rampup')}%` };
   }
-  if (isLeadershipTrack(e, idx)) return { track: 'leadership', weights: b70.weights.leadership, why: 'Leadership track: growth carries 20%' };
-  return { track: 'standard', weights: b70.weights.standard, why: 'Standard weights: growth still carries 10%' };
+  const lead = leadershipReason(e, idx);
+  if (lead) return { track: 'leadership', weights: b70.weights.leadership, why: `Leadership track (${lead.toLowerCase()}): growth carries ${g('leadership')}%` };
+  return { track: 'standard', weights: b70.weights.standard, why: `Standard weights: growth carries ${g('standard')}%` };
 }
 
 export function helix(e, idx, b70) {

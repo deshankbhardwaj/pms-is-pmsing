@@ -29,7 +29,8 @@ export function histogram(values, { bins = 16, lo = 1, hi = 5, color = '#5f7cff'
   const rects = counts.map((c, i) => `<rect class="hb" x="${(X(lo + i * bw) + 1).toFixed(1)}" y="${Y(c).toFixed(1)}" width="${(X(lo + bw) - X(lo) - 2).toFixed(1)}" height="${(H - pad.b - Y(c)).toFixed(1)}" rx="3" fill="${color}" opacity=".75"/>`).join('');
   const ticks = [1, 2, 3, 4, 5].map((t) => `<text x="${X(t)}" y="${H - 8}" text-anchor="middle">${t}</text>`).join('');
   const marks = mark.map((m) => `<line x1="${X(m.x)}" x2="${X(m.x)}" y1="${pad.t}" y2="${H - pad.b}" stroke="${m.color || '#8b5cf6'}" stroke-dasharray="3 3"/><text x="${X(m.x) + 4}" y="${pad.t + 10}" fill="${m.color || '#8b5cf6'}" style="fill:${m.color || '#8b5cf6'};font-weight:800">${esc(m.label)}</text>`).join('');
-  return `<svg class="chart" viewBox="0 0 ${W} ${H}" data-anim="hist">${rects}
+  const alt = `Histogram of ${v.length} composite scores on a 1 to 5 scale, average ${mean.toFixed(2)}, shown against a bell curve and a "best and the rest" curve`;
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" data-anim="hist" role="img" aria-label="${esc(alt)}">${rects}
     <path class="ln" d="${pts(normal)}" fill="none" stroke="#e0a800" stroke-width="2.5"/>
     <path class="ln" d="${pts(lognorm)}" fill="none" stroke="#e5484d" stroke-width="2.5"/>
     <line x1="${pad.l}" x2="${W - pad.r}" y1="${H - pad.b}" y2="${H - pad.b}" stroke="rgba(120,120,140,.3)"/>${ticks}${marks}</svg>
@@ -42,7 +43,8 @@ export function radar(axes, { max = 5, color = '#5f7cff', size = 300, second = n
   const ring = (f) => axes.map((_, i) => P(i, max * f).join(',')).join(' ');
   const poly = (vals) => vals.map((v, i) => P(i, Math.max(0, v)).join(',')).join(' ');
   const labels = axes.map((a, i) => { const [x, y] = P(i, max * 1.2); return `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle" style="font-weight:700">${esc(a.label)}</text>`; }).join('');
-  return `<svg class="chart" viewBox="0 0 ${size} ${size}" data-anim="radar" style="max-width:${size + 40}px;margin:0 auto">
+  const alt = `Radar chart: ${axes.map((a) => `${a.label} ${Number(a.value).toFixed(1)} of ${max}`).join(', ')}`;
+  return `<svg class="chart" viewBox="0 0 ${size} ${size}" data-anim="radar" role="img" aria-label="${esc(alt)}" style="max-width:${size + 40}px;margin:0 auto">
     ${[0.25, 0.5, 0.75, 1].map((f) => `<polygon points="${ring(f)}" fill="none" stroke="rgba(120,120,140,.2)"/>`).join('')}
     ${second ? `<polygon class="rp" points="${poly(second)}" fill="${secondColor}" fill-opacity=".12" stroke="${secondColor}" stroke-dasharray="4 3" style="transform-origin:${c}px ${c}px"/>` : ''}
     <polygon class="rp" points="${poly(axes.map((a) => a.value))}" fill="${color}" fill-opacity=".22" stroke="${color}" stroke-width="2.5" style="transform-origin:${c}px ${c}px"/>
@@ -62,12 +64,13 @@ export function donut(items, { size = 180, hole = 0.62, label = '' } = {}) {
     a0 = a1;
     return `<path class="dn" d="${d}" fill="${it.color}"><title>${esc(it.label)}: ${it.value}</title></path>`;
   }).join('');
-  return `<svg class="chart" viewBox="0 0 ${size} ${size}" data-anim="donut" style="max-width:${size}px">${arcs}<text x="${c}" y="${c - 4}" text-anchor="middle" style="font-family:var(--display);font-size:28px;fill:currentColor">${esc(label)}</text><text x="${c}" y="${c + 16}" text-anchor="middle">weights</text></svg>`;
+  const alt = `Donut chart, total ${esc(label)}: ${items.map((i) => `${i.label} ${i.value}`).join(', ')}`;
+  return `<svg class="chart" viewBox="0 0 ${size} ${size}" data-anim="donut" role="img" aria-label="${esc(alt)}" style="max-width:${size}px">${arcs}<text x="${c}" y="${c - 4}" text-anchor="middle" style="font-family:var(--display);font-size:28px;fill:currentColor">${esc(label)}</text><text x="${c}" y="${c + 16}" text-anchor="middle">weights</text></svg>`;
 }
 
 export function gauge(pctVal, { left = 'Traditional', right = 'Contemporary', dark = true } = {}) {
   const rot = -90 + pctVal * 1.8;
-  return `<svg class="chart" viewBox="0 0 240 130" data-anim="gauge" style="max-width:240px;margin:0 auto">
+  return `<svg class="chart" viewBox="0 0 240 130" data-anim="gauge" role="img" aria-label="${esc(`Gauge: ${Math.round(pctVal)}% ${right.toLowerCase()}, ${100 - Math.round(pctVal)}% ${left.toLowerCase()}`)}" style="max-width:240px;margin:0 auto">
     <defs><linearGradient id="gg${Math.round(pctVal)}" x1="0" x2="1"><stop offset="0" stop-color="#ff9f43"/><stop offset="1" stop-color="#48dbfb"/></linearGradient></defs>
     <path d="M20 112 A100 100 0 0 1 220 112" fill="none" stroke="${dark ? '#272938' : '#e6e3dc'}" stroke-width="16" stroke-linecap="round"/>
     <path d="M20 112 A100 100 0 0 1 220 112" fill="none" stroke="url(#gg${Math.round(pctVal)})" stroke-width="6" stroke-linecap="round"/>
@@ -78,7 +81,7 @@ export function gauge(pctVal, { left = 'Traditional', right = 'Contemporary', da
 
 export function hbars(items, { max = null, suffix = '', dec = 1, color = null } = {}) {
   const m = max ?? Math.max(...items.map((i) => i.value), 1);
-  return items.map((i) => `<div class="hbar"><span class="lab" title="${esc(i.label)}">${esc(i.label)}</span><div class="bar"><i data-w="${(i.value / m) * 100}" style="background:${i.color || color || 'var(--mc)'}"></i></div><span class="val">${i.value === null ? '—' : Number(i.value).toFixed(dec)}${suffix}</span></div>`).join('');
+  return items.map((i) => `<div class="hbar"><span class="lab">${esc(i.label)}</span><div class="bar"><i data-w="${Math.max(0, Math.min(100, ((i.value ?? 0) / m) * 100))}" style="background:${i.color || color || 'var(--mc)'}"></i></div><span class="val">${i.value === null ? '—' : Number(i.value).toFixed(dec)}${suffix}</span></div>`).join('');
 }
 
 export function animateCharts(root) {

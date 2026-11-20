@@ -1,7 +1,7 @@
 // Ranking Decision Engine (v0.4 §8.2): verdict per role x country pool, with gates and the Built-70 shield.
 import { num } from './util.js';
 
-export function rankingVerdict({ role, country, members, results, shieldedIds, org, rules }) {
+export function rankingVerdict({ role, country, members, results, shieldedIds, org, rules, bottomText }) {
   const R = rules.ranking;
   const steps = [];
   const pool = members.filter((e) => !shieldedIds.has(e.emp_id));
@@ -21,7 +21,7 @@ export function rankingVerdict({ role, country, members, results, shieldedIds, o
     }
   }
   const reason = {
-    absolute: n < R.min_pool_any_ranking ? `Only ${n} comparable people: too few to rank fairly` : 'Ranking would hurt collaboration or risk-taking in this role',
+    absolute: n < R.min_pool_any_ranking ? `Only ${n} comparable ${n === 1 ? 'person' : 'people'}: too few to rank fairly` : 'Ranking would hurt collaboration or risk-taking in this role',
     relative: 'Compare people in calibration, but no fixed quotas',
     forced: 'Individual, measurable work in a large pool: tiers for rewards only',
   }[verdict];
@@ -29,21 +29,25 @@ export function rankingVerdict({ role, country, members, results, shieldedIds, o
   const tierPlan = cutthroat ? R.tiers_cutthroat : R.tiers_default;
   const tiers = {};
   if (verdict === 'forced') {
-    const ranked = pool.map((e) => results.get(e.emp_id)).filter(Boolean).sort((a, b) => (b.composite ?? 0) - (a.composite ?? 0));
+    // Unrounded composite decides the order; exact ties fall back to Results, then ID, so the order never depends on row order.
+    const key = (r) => r.compositeRaw ?? r.composite ?? 0;
+    const ranked = pool.map((e) => results.get(e.emp_id)).filter(Boolean)
+      .sort((a, b) => key(b) - key(a) || (b.resultsRaw ?? 0) - (a.resultsRaw ?? 0) || String(a.emp_id).localeCompare(String(b.emp_id)));
     const nTop = Math.round((tierPlan[0].pct / 100) * ranked.length);
     const nBottom = Math.round((tierPlan[2].pct / 100) * ranked.length);
     const eligibleTop = ranked.filter((r) => r.gatePassed);
     const topIds = new Set(eligibleTop.slice(0, nTop).map((r) => r.emp_id));
-    const bottomIds = new Set(ranked.slice(-nBottom).map((r) => r.emp_id));
+    const bottomIds = new Set(nBottom > 0 ? ranked.slice(-nBottom).map((r) => r.emp_id) : []);
+    const eligibleRank = new Map(eligibleTop.map((r, i) => [r.emp_id, i + 1]));
     ranked.forEach((r, i) => {
       const t = topIds.has(r.emp_id) ? 'Top' : bottomIds.has(r.emp_id) ? 'Bottom' : 'Core';
-      tiers[r.emp_id] = { tier: t, position: i + 1, of: ranked.length, note: !r.gatePassed && i < nTop ? 'Ranked high but failed a gate: kept out of the top tier' : '' };
+      tiers[r.emp_id] = { tier: t, position: i + 1, of: ranked.length, eligibleRank: eligibleRank.get(r.emp_id) ?? null, note: !r.gatePassed && i < nTop ? 'Ranked high but failed a gate: kept out of the top tier' : '' };
     });
   }
   return {
     role_id: role.role_id, country, verdict, label: R.verdicts[verdict], reason, steps, poolSize: n, members: members.length,
     shielded: members.filter((e) => shieldedIds.has(e.emp_id)).map((e) => e.emp_id),
     tierPlan: verdict === 'forced' ? tierPlan : null, cutthroat, tiers,
-    bottomTierAction: verdict === 'forced' ? R.bottom_tier_action[country] : null,
+    bottomTierAction: verdict === 'forced' ? (bottomText || R.bottom_tier_action[country]) : null,
   };
 }

@@ -1,0 +1,32 @@
+{
+  "_about": "How the six Strategy DNA sliders (1–10) change the PMS (PRISM v0.4 §7 M1). Every line on the 'PMS personality' card comes from this file, and the engine reads the same numbers.",
+  "cadence": [
+    { "pace_at_least": 8, "checkins": "monthly", "checkins_per_year": 12, "reviews": "quarterly", "pip_days": "45–60 days" },
+    { "pace_at_least": 5, "checkins": "monthly", "checkins_per_year": 12, "reviews": "half-yearly", "pip_days": "60–90 days" },
+    { "pace_at_least": 1, "checkins": "quarterly", "checkins_per_year": 4, "reviews": "annual", "pip_days": "90 days" }
+  ],
+  "innovation": {
+    "_about": "At or above the threshold, key results (type KR) are scored as OKRs: 0.7 progress = 3.5. Below it, they are scored like KPIs, straight-line between the sheet's threshold (1), target (3) and stretch (5).",
+    "okr_scoring_at_least": 7
+  },
+  "cost_focus": {
+    "_about": "At or above the threshold the budget guard is strict: if bonuses exceed the target pool in a country, every bonus there is scaled down so the pool is used exactly. Below it the guard only warns.",
+    "strict_budget_guard_at_least": 8
+  },
+  "team_orientation": {
+    "_about": "At or above the threshold, plant teams get a bigger share of the savings in gainsharing.",
+    "boost_at_least": 7,
+    "boosted_pool_share_pct": 40
+  },
+  "risk_appetite": {
+    "_about": "At or below the threshold, a failed compliance gate caps the rating at the strict cap instead of the normal cap in ranking.json.",
+    "strict_at_most": 4,
+    "strict_gate_rating_cap": 1
+  },
+  "customer_intimacy": {
+    "_about": "At or above the threshold, KPIs whose KRA is 'Customer' count more inside their role's Results score (weight × multiplier, then renormalised).",
+    "boost_at_least": 8,
+    "customer_kra": "Customer",
+    "weight_multiplier": 1.5
+  }
+}

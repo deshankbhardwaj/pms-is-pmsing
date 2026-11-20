@@ -2,9 +2,10 @@
 // Run from the project root:  node scripts/check_engine.mjs
 import { readFileSync } from 'node:fs';
 import { runAll } from '../js/engine/index.js';
+import { validate, buildMeta } from '../js/engine/validate.js';
 
 const j = (p) => JSON.parse(readFileSync(new URL(`../${p}`, import.meta.url)));
-const rules = Object.fromEntries(['methods', 'ranking', 'rewards', 'built70', 'training'].map((n) => [n, j(`data/rules/${n}.json`)]));
+const rules = Object.fromEntries(['methods', 'ranking', 'rewards', 'built70', 'training', 'dna'].map((n) => [n, j(`data/rules/${n}.json`)]));
 const data = j('data/sample-org/voltbridge.json');
 const out = runAll(data, rules);
 const P = Object.fromEntries(out.personas.map((p) => [p.key, p.row]));
@@ -25,7 +26,7 @@ console.log('');
 check(pool('SAL', 'IN').verdict === 'forced', 'Sales India → forced distribution for reward tiers');
 check(pool('SAL', 'CN').verdict === 'forced', 'Sales China → forced distribution for reward tiers');
 check(JSON.stringify(pool('SAL', 'IN').tierPlan.map((t) => t.pct)) === '[15,75,10]', 'Pace 9 → cutthroat tiers 15/75/10');
-check(pool('CSA', 'IN').verdict === 'relative', 'Customer Support India (24) → relative calibration');
+check(pool('CSA', 'IN').verdict === 'relative', `Customer Support India (${pool('CSA', 'IN').poolSize} compared, ${pool('CSA', 'IN').shielded.length} shielded) → relative calibration`);
 check(pool('CSA', 'CN').verdict === 'absolute' && pool('CSA', 'CN').poolSize === 8, 'Wang Fang: Customer Support China pool of 8 → ranking refused');
 check(['ASM', 'QIN', 'CFT'].every((r) => pool(r, 'IN').verdict === 'absolute'), 'Assembly, Quality, Charging → absolute standards');
 check(pool('BRD', 'CN').verdict === 'absolute' && pool('SWE', 'IN').verdict === 'absolute', 'Battery R&D, Software → absolute + calibration');
@@ -51,6 +52,25 @@ const vk = out.bias.managers.find((m) => m.manager_id === P.vikram.emp.emp_id);
 check(vk && vk.flags.some((f) => f.type === 'leniency') && vk.mean >= 4.4, `Vikram: leniency flag (team average ${vk?.mean} vs company ${out.bias.orgMean})`);
 check(P.vikram.result.items.find((i) => i.kpi_id === 'PLM-03').score < 2, 'Vikram: low "leaders built" score');
 check(out.protectedLearningPct === 3, 'Pace 9 → protected learning time reduced to 3% (never 0)');
+
+console.log('\n== Data Hub validator ==');
+const vs = validate(data, data, data.meta);
+check(vs.nErr === 0, `The sample passes its own validator (${vs.nErr} errors, ${vs.nWarn} warnings)`);
+const bad = (label, f, expect) => { const d = structuredClone(data); f(d); d.meta = buildMeta(d, null, data).meta; const r = validate(d, data, d.meta); check(r.errs.some((e) => expect.test(e.msg)), `Validator catches: ${label}`); };
+bad('potential 2.5', (d) => { d.Employees[5].potential = 2.5; }, /potential must be 1, 2 or 3/);
+bad('pay_range_mid in thousands', (d) => { d.Employees[5].pay_range_mid = 600; }, /compa-ratio/);
+bad('base_pay 1e15', (d) => { d.Employees[5].base_pay = 1e15; }, /base_pay must be a positive/);
+bad('grade missing from Reward_Policy', (d) => { d.Employees[7].grade = 'Z9'; }, /has no IN row in Reward_Policy|has no CN row in Reward_Policy/);
+bad('currency that does not match the country', (d) => { d.Employees[8].currency = d.Employees[8].country === 'IN' ? 'CNY' : 'INR'; }, /currency must be/);
+bad('text actual', (d) => { d.KPI_Actuals.find((a) => a.kpi_id === 'SAL-01').actual = 'n/a'; }, /is not a number/);
+bad('OKR actual of 70', (d) => { d.KPI_Actuals.find((a) => a.kpi_id === 'BRD-K1').actual = 70; }, /scores from 0 to 1/);
+bad('own manager', (d) => { d.Employees[10].manager_id = d.Employees[10].emp_id; }, /own manager/);
+bad('unknown Feedback_360 ratee', (d) => { d.Feedback_360[0].ratee_id = 'NOPE'; }, /ratee_id "NOPE"/);
+bad('weights that add to 99.5', (d) => { d.KPIs[0].weight_pct = Number(d.KPIs[0].weight_pct) - 0.5; }, /add to 99\.5/);
+bad('role start after the review date', (d) => { d.Employees[11].role_start_date = '2027-05-01'; }, /after the review date/);
+const noGate = structuredClone(data); noGate.KPI_Actuals = noGate.KPI_Actuals.filter((a) => !(a.kpi_id === 'SAL-G1' && a.emp_id === P.arjun.emp.emp_id));
+const ng = validate(noGate, data, data.meta), ngOut = runAll(noGate, rules).employees.find((x) => x.emp.emp_id === P.arjun.emp.emp_id);
+check(ng.nErr === 0 && ng.warns.some((w) => /no data for the gate SAL-G1/.test(w.msg)) && !ngOut.result.capped && ngOut.result.gatePassed, 'Missing gate rows: a warning, no penalty (Arjun not capped)');
 console.log(`\nBudget guard: IN ${out.budget.IN.utilisationPct}% of target pool, CN ${out.budget.CN.utilisationPct}%`);
 console.log(`Arjun total reward: ${P.arjun.rewards.total} ${P.arjun.rewards.currency} (${P.arjun.rewards.extras.map((x) => x.name + ' ' + x.amount).join(', ')})`);
 console.log(`\n${fails ? fails + ' FAILED' : 'All persona checks passed'}`);
