@@ -1,8 +1,9 @@
-// M6 Review & Delivery: review calendar per country, conversation builder, calibration board, check-ins, appeals.
+// M6 Review & Delivery: review calendar per country, feedback conversation (script + feedback toolkit), calibration board, check-ins, appeals.
 import * as UI from '../ui.js';
+import { feedbackHtml, feedbackMount } from '../feedback.js';
 const { esc, gsap, RM } = UI;
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const TABS = [['cal', 'Review calendar'], ['talk', 'Conversation builder'], ['calib', 'Calibration board'], ['exec', 'Check-ins & delivery'], ['appeal', 'Appeals']];
+const TABS = [['cal', 'Review calendar'], ['talk', 'Feedback conversation'], ['calib', 'Calibration board'], ['exec', 'Check-ins & delivery'], ['appeal', 'Appeals']];
 const RATING = ['', 'Unsatisfactory', 'Developing', 'Solid', 'Strong', 'Outstanding'];
 const mod12 = (x) => ((x % 12) + 12) % 12;
 
@@ -99,7 +100,8 @@ export default {
             <div class="tip mt"><b>${UI.code(c)} tip</b> ${esc(ctx.idx.country.feedback_culture?.[c])}. ${c === 'CN' ? 'Give the critical part one-to-one; praise in front of the team.' : 'Be direct; public praise is welcome; frame yourself as a mentor.'}</div></div>
           <div class="card"><div class="row between"><h2 class="h4" style="margin:0">Script (built from ${esc(String(r.emp.name).split(' ')[0])}'s data)</h2><button class="btn light sm" id="copyScript">Copy</button></div>
             <div class="script mt" id="script">${lines.map(([h, t]) => `<div class="sl"><span>${esc(h)}</span><p>${esc(t)}</p></div>`).join('')}</div>
-            <p class="why mt">Rating talk now; development talk booked ${ctx.rules.built70.split_conversation_min_weeks}+ weeks later. Tone set by the ${c === 'IN' ? 'India' : 'China'} rules (switch the lens in the top bar).</p></div></div>`;
+            <p class="why mt">Rating talk now; development talk booked ${ctx.rules.built70.split_conversation_min_weeks}+ weeks later. Tone set by the ${c === 'IN' ? 'India' : 'China'} rules (switch the lens in the top bar).</p></div></div>
+          ${feedbackHtml(ctx, r)}`;
       }
     } else if (tab === 'calib') {
       const mgrs = ctx.out.bias.managers.filter((m) => ctx.out.employees.some((r) => r.emp.manager_id === m.manager_id));
@@ -159,6 +161,7 @@ export default {
         const t = [...root.querySelectorAll('#script .sl')].map((s) => `${s.querySelector('span').textContent}: ${s.querySelector('p').textContent}`).join('\n');
         navigator.clipboard?.writeText(t).then(() => UI.toast('Script copied.'), () => UI.toast('Copy is blocked here; select the text instead.'));
       });
+      feedbackMount(root, ctx, ctx.row(ctx.state.sel.talkPerson));
     }
     if (tab === 'calib' && root.querySelector('#calib')) calibMount(root, ctx);
   },

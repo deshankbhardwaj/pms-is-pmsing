@@ -46,7 +46,7 @@ const SAMPLE_SOURCE = 'VoltBridge sample';
 
 const state = {
   sample: null, base: null, baseIsSample: true, data: null, rulesBase: null, rules: null, out: null, outs: {},
-  lens: 'home', route: null, sel: {}, calib: {}, health: null, appOpen: false, source: SAMPLE_SOURCE,
+  lens: 'home', route: null, sel: {}, calib: {}, talk: {}, health: null, appOpen: false, source: SAMPLE_SOURCE,
   toggles: { ...DEFAULT_TOGGLES }, dirty: false, saved: null, saveError: '', restored: false,
 };
 
@@ -151,7 +151,7 @@ function save() {
   if (!state.dirty) return;
   const payload = {
     v: 1, savedAt: new Date().toISOString(), source: state.source, lens: state.lens, toggles: state.toggles,
-    calib: state.calib, health: state.health, rules: state.rules, data: state.data, base: state.baseIsSample ? null : state.base,
+    calib: state.calib, talk: state.talk, health: state.health, rules: state.rules, data: state.data, base: state.baseIsSample ? null : state.base,
   };
   try {
     localStorage.setItem(STORE_KEY, JSON.stringify(payload));
@@ -198,7 +198,7 @@ const ctx = {
       state.base = structuredClone(data); state.data = structuredClone(data); state.baseIsSample = isSample;
       state.source = source || 'Uploaded workbook';
       state.rules = structuredClone(state.rulesBase); state.toggles = { ...DEFAULT_TOGGLES };
-      state.sel = {}; state.calib = {}; state.health = null; state.lens = 'home';
+      state.sel = {}; state.calib = {}; state.talk = {}; state.health = null; state.lens = 'home';
       compute();
       if (!state.out.employees.length) throw new Error('No scored employees: every employee is an executive or has no role.');
     } catch (err) {
@@ -266,12 +266,12 @@ async function boot() {
       state.data = saved.data; state.base = saved.base || structuredClone(state.sample); state.baseIsSample = !saved.base;
       state.rules = { ...structuredClone(state.rulesBase), ...saved.rules }; state.toggles = { ...DEFAULT_TOGGLES, ...(saved.toggles || {}) };
       state.lens = ['home', 'IN', 'CN'].includes(saved.lens) ? saved.lens : 'home';
-      state.calib = saved.calib || {}; state.health = saved.health || null; state.source = saved.source || SAMPLE_SOURCE; state.saved = saved.savedAt;
+      state.calib = saved.calib || {}; state.talk = saved.talk && typeof saved.talk === 'object' ? saved.talk : {}; state.health = saved.health || null; state.source = saved.source || SAMPLE_SOURCE; state.saved = saved.savedAt;
       compute();
       state.restored = true;
     } catch (err) {
       console.warn('Saved session could not be restored', err);
-      Object.assign(state, keep, { toggles: { ...DEFAULT_TOGGLES }, lens: 'home', calib: {}, health: null, source: SAMPLE_SOURCE, saved: null, baseIsSample: true });
+      Object.assign(state, keep, { toggles: { ...DEFAULT_TOGGLES }, lens: 'home', calib: {}, talk: {}, health: null, source: SAMPLE_SOURCE, saved: null, baseIsSample: true });
       forgetSaved();
       compute();
     }

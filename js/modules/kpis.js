@@ -11,7 +11,7 @@ function ordered(k) {
   const thr = n(k.threshold), tgt = n(k.target), st = n(k.stretch);
   return thr !== null && tgt !== null && st !== null && ((thr < tgt && tgt < st) || (thr > tgt && tgt > st));
 }
-function smart(k) {
+export function smart(k) {
   return [
     ['S', 'Specific', !!(k.kpi_name && k.kra)],
     ['M', 'Measurable', !!k.unit && (k.type === 'Gate' || ordered(k))],

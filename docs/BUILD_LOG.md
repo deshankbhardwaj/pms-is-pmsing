@@ -168,3 +168,40 @@ Worked through every item in the QA report: the 106 numbered bugs (C1–C3, H1�
 
 ### Open decision
 - **Commission on a failed gate:** Karan still gets full commission on his bookings. The spec removes only the top-tier reward and the kicker, so this was left as it is. Decide whether a failed fair-selling gate should also hold back commission.
+
+---
+
+## 2026-11-23 · Feedback conversation toolkit and tour v2 (spec: v0.5)
+
+**Asked:** check whether the app covers feedback and performance reviews and add or improve it with Deshank's appraisal-interview checklist, the rules for a defensive employee and for delivering criticism, and "Falkman's" research; update the README; fix the tour's transitions, the scroll lock ("if I scroll up I can't scroll down during the tour") and its flow, and bring the feedback work into it.
+
+### What was there
+The Review & Delivery screen already had an SBI / GROW / feed-forward script built from each person's data, the calibration board, the review calendar, check-ins and appeals. It had no appraisal-interview checklist, nothing on defensive employees, no rules for criticism and no feedback research. So the tab was extended, not replaced.
+
+### What changed
+- **New `js/feedback.js`**, mounted under the script on the conversation tab (renamed "Feedback conversation"):
+  - *Before the meeting:* four signals from the data (no surprises, defensiveness, objective/free of bias, in private), with reasons.
+  - *Appraisal-interview checklist:* the nine questions with evidence from the data for each; item 9 uses the KPI library's SMART check (`smart()` is now exported from `modules/kpis.js`). Ticks are saved per person (`state.talk`, kept with the rest of the browser save).
+  - *If [name] gets defensive:* the four rules with a sentence to say; highlighted with the reasons when defensiveness is likely.
+  - *Delivering criticism:* the five rules, plus a sentence checker (labels, "always/never", no next step, no fact, comparisons, two Folkman habits), starting from a draft written from the failed gate or weakest KPI.
+  - *What the research says:* Zenger & Folkman (2013, 2014, 2015), Losada & Heaphy with the Brown et al. (2013) caveat, Meyer, Kay & French.
+- **About & Method:** brief line, two glossary entries (appraisal interview, corrective feedback) and seven references (Dessler marked ⚠️ edition to confirm).
+- **Tour v2 (`js/tour.js` rewritten):**
+  - *Flow:* a welcome card, then ten stops in cycle order (plan → assess → review → reward → develop → country → renew) with chapter labels. Stop 6 is new: Karan's feedback conversation. Stops call back to each other (Karan at stop 3 → stop 6).
+  - *Scroll lock fixed:* the four clear panes that blocked the dimmed page are gone. They caught wheel and touch events, and when the highlight scrolled off screen they covered everything, so the page could not scroll back. Clicks on the dim are now caught by a document listener instead, so nothing blocks scrolling; a wheel over the narrator card scrolls the page too.
+  - *Transitions:* card out → iris closes → next screen loads under the dim → its entrance animation is finished → the page glides to the highlight → iris opens → card in. Stops on the same screen skip the iris and the spotlight follows the glide. "↑/↓ Back to the highlight" appears when the highlight is scrolled away.
+  - *Placement:* beside, under, or docked at the bottom with the spotlight ending above the card (wide, tall highlights and phones), so the card never covers what it is talking about.
+- **CSS:** feedback toolkit styles (screen, phone, print); `.tour-return`; "What changed" sits above the dim on desktop so stop 1 can show it; the `.tour-block` panes are removed.
+
+### How it was checked
+- `node scripts/check_engine.mjs`: all persona checks pass.
+- **New tour test** at 1440×900, 1024×768 and 390×844 (phone): every stop's spotlight sits on its target; the page glides (no single frame jumps more than about a third of the distance); each stop settles in under 2.5 s; the card doesn't cover the highlight (except at stop 5, where it docks in the board's empty columns by design); scrolling up and then down mid-tour works, over the dim and over the card; "Back to the highlight" appears and glides back; ten stops in order; the final card is undimmed; no page errors.
+- **New feedback test** at 1440 and 390: the toolkit renders for Karan with no NaN/undefined; nine items; the signals; ticks and the draft survive a reload; "lazy" and "always" are flagged and a good sentence passes every check; another person renders cleanly; no sideways overflow.
+- **Updated UI test:** the tour block now covers the welcome card, double-click, a click on the dim (pauses and doesn't reach the page), resume, navigation pause, Start over, stops 3–7 and the final card. All UI, data, layout and smoke tests pass; axe-core finds no issues on the feedback tab or the tour card; the conversation tab prints on 4 A4 pages.
+
+### Spec
+The 22 differences from v0.4 recorded above are folded into **v0.5 §8.7**, so they are no longer open differences.
+
+### Notes
+- "Falkman" is read as **Joseph Folkman** (Zenger Folkman). The YouTube video wasn't identified, so the toolkit uses his written research; the link is an open question (v0.5 §19).
+- Open decision (unchanged): commission on a failed fair-selling gate (v0.5 D-13).
