@@ -290,6 +290,7 @@ async function boot() {
   $$('#lensSeg button').forEach((b) => b.addEventListener('click', () => setLens(b.dataset.lens)));
   // Persona jump: a mouse pick opens at once; keyboard users move with the arrows and press Enter.
   const pj = $('#personaJump');
+  UI.enhanceSelects($('.topbar'));
   let kbNav = false;
   pj.addEventListener('keydown', (e) => {
     if (['ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'].includes(e.key)) kbNav = true;
@@ -399,6 +400,7 @@ function focusKey() {
 }
 function render(id, { soft = false } = {}) {
   if (!id || !byId[id]) return;
+  UI.closeCombo();
   const m = byId[id];
   const changed = state.route !== id;
   const fk = soft && !changed ? focusKey() : null;
@@ -421,6 +423,7 @@ function render(id, { soft = false } = {}) {
   content.scrollTop = keepScroll;
   try { m.mod.mount?.(page, ctx, { soft: soft && !changed }); } catch (e) { console.error(e); }
   UI.makeKeyboardFriendly(page);
+  UI.enhanceSelects(page);
   if (fk) page.querySelector(fk)?.focus({ preventScroll: true });
   if (soft && !changed) { UI.settle(page); animateCharts(page); return; }
   if (!RM) gsap.fromTo(page, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.45, ease: 'power2.out', clearProps: 'transform' });
@@ -500,6 +503,7 @@ export function openPerson(id, { fromHash = false } = {}) {
     <div class="row mt2"><button class="btn sm" data-goto="forge">Open in Leadership Forge</button><button class="btn light sm" data-goto="rewards">Rewards</button><button class="btn light sm" data-goto="review">Review conversation</button><button class="btn light sm" data-goto="lens">Country lens</button></div>`;
   UI.openDrawer(head, body, (b) => {
     UI.makeKeyboardFriendly(b);
+    UI.enhanceSelects(b);
     b.querySelectorAll('[data-goto]').forEach((btn) => btn.addEventListener('click', () => {
       const target = btn.dataset.goto;
       GO_FROM_DRAWER[target]?.(id);

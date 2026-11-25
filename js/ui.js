@@ -249,3 +249,184 @@ export function textOn(hex, min = 4.5) {
   }
   return '#14151c';
 }
+
+/* ---------------- searchable dropdowns ---------------- */
+// Every <select class="sel"> in the app becomes a button that opens a list with a search box (type part of a name,
+// a role, a site or a group: all words must match, accents ignored). The native select stays in the page, hidden,
+// and keeps the value: a pick sets it and fires its "change" event, so each screen's own listener works unchanged.
+const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+let cb = null;      // the open list: { sel, btn, pop, input, items, active, close }
+let cbSeq = 0;
+export function enhanceSelects(root) {
+  if (!root) return;
+  root.querySelectorAll('select.sel:not([data-cb])').forEach(makeCombo);
+}
+function cbOptions(sel) {
+  const out = [];
+  const push = (o, group) => { if (!o.disabled) out.push({ o, group }); };
+  for (const el of sel.children) {
+    if (el.tagName === 'OPTGROUP') for (const o of el.children) push(o, el.label);
+    else if (el.tagName === 'OPTION') push(el, '');
+  }
+  // A leading empty option ("Jump to a persona…") is a prompt, not a choice: it becomes the button text instead.
+  const prompt = out[0] && out[0].o.value === '' && out.length > 1 ? out.shift().o.textContent : '';
+  return { items: out, prompt };
+}
+const cbLabel = (sel) => (sel.getAttribute('aria-label') || sel.labels?.[0]?.textContent || sel.title || 'Choose').trim();
+function makeCombo(sel) {
+  sel.dataset.cb = '1';
+  const id = sel.id || `cb${++cbSeq}`;
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.id = `${id}Cb`;
+  btn.className = ['cb-btn', ...[...sel.classList].filter((c) => c !== 'sel')].join(' ');
+  if (sel.getAttribute('style')) btn.setAttribute('style', sel.getAttribute('style'));
+  if (sel.title) btn.title = sel.title;
+  btn.setAttribute('aria-haspopup', 'listbox');
+  btn.setAttribute('aria-expanded', 'false');
+  btn.innerHTML = '<span class="cb-val"></span><svg class="cb-chev" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  sel.after(btn);
+  sel.classList.add('cb-native');
+  sel.tabIndex = -1;
+  sel.setAttribute('aria-hidden', 'true');
+  const sync = () => {
+    const o = sel.selectedOptions[0];
+    const { prompt } = cbOptions(sel);
+    const text = o && o.value !== '' ? o.textContent : prompt || o?.textContent || '';
+    btn.querySelector('.cb-val').textContent = text;
+    btn.setAttribute('aria-label', `${cbLabel(sel)}: ${text}`);
+    btn.disabled = sel.disabled;
+  };
+  sync();
+  sel.addEventListener('change', sync);
+  sel._cbSync = sync;
+  new MutationObserver(sync).observe(sel, { childList: true, subtree: true, attributes: true, attributeFilter: ['disabled'] });
+  btn.addEventListener('click', () => (cb?.btn === btn ? cb.close(true) : openCombo(sel, btn)));
+  btn.addEventListener('keydown', (e) => {
+    if (['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(e.key)) { e.preventDefault(); openCombo(sel, btn); }
+    else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); openCombo(sel, btn, e.key); }
+  });
+}
+function openCombo(sel, btn, typed = '') {
+  cb?.close(false);
+  const { items, prompt } = cbOptions(sel);
+  const label = cbLabel(sel);
+  const lid = `${btn.id}List`;
+  const pop = document.createElement('div');
+  pop.className = 'cb-pop';
+  pop.setAttribute('role', 'dialog');
+  pop.setAttribute('aria-label', label);
+  let html = '', grp = null;
+  items.forEach((it, i) => {
+    if (it.group !== grp) { grp = it.group; if (grp) html += `<div class="cb-grp" data-g="${esc(grp)}" role="presentation">${esc(grp)}</div>`; }
+    html += `<div class="cb-opt${it.o.selected && it.o.value !== '' ? ' on' : ''}" role="option" id="${lid}${i}" data-i="${i}" data-g="${esc(it.group)}" aria-selected="${it.o.selected && it.o.value !== ''}">${esc(it.o.textContent)}</div>`;
+  });
+  pop.innerHTML = `<div class="cb-search"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m10.6 10.6 3 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <input type="text" role="combobox" aria-expanded="true" aria-autocomplete="list" aria-controls="${lid}" aria-label="Search: ${esc(label)}" placeholder="Search ${items.length} option${items.length === 1 ? '' : 's'}…" autocomplete="off" spellcheck="false"></div>
+    <div class="cb-list" role="listbox" id="${lid}" aria-label="${esc(label)}">${html}</div>
+    <p class="cb-empty" hidden>No match. Try part of a name, a role or a site.</p>
+    <p class="cb-count" aria-live="polite"></p>`;
+  document.body.append(pop);
+  const input = pop.querySelector('input'), list = pop.querySelector('.cb-list');
+  const els = [...pop.querySelectorAll('.cb-opt')];
+  const keys = items.map((it) => fold(`${it.o.textContent} ${it.group}`));
+  let shown = els.map((_, i) => i);
+  let active = Math.max(0, items.findIndex((it) => it.o.selected && it.o.value !== ''));
+  const setActive = (i, scroll = true) => {
+    els[active]?.classList.remove('act');
+    active = i;
+    const el = els[i];
+    if (!el) { input.removeAttribute('aria-activedescendant'); return; }
+    el.classList.add('act');
+    input.setAttribute('aria-activedescendant', el.id);
+    if (scroll) el.scrollIntoView({ block: 'nearest' });
+  };
+  const filter = () => {
+    const words = fold(input.value).split(/\s+/).filter(Boolean);
+    shown = [];
+    els.forEach((el, i) => {
+      const hit = words.every((w) => keys[i].includes(w));
+      el.hidden = !hit;
+      if (hit) shown.push(i);
+      // mark the first word inside the option's own text
+      const t = items[i].o.textContent;
+      const at = words.length ? fold(t).indexOf(words[0]) : -1;
+      el.innerHTML = at >= 0 ? `${esc(t.slice(0, at))}<mark>${esc(t.slice(at, at + words[0].length))}</mark>${esc(t.slice(at + words[0].length))}` : esc(t);
+    });
+    pop.querySelectorAll('.cb-grp').forEach((g) => { g.hidden = !els.some((el) => !el.hidden && el.dataset.g === g.dataset.g); });
+    pop.querySelector('.cb-empty').hidden = shown.length > 0;
+    pop.querySelector('.cb-count').textContent = words.length ? `${shown.length} of ${items.length}` : '';
+    setActive(shown.includes(active) && !words.length ? active : shown[0] ?? -1);
+  };
+  const place = () => {
+    if (!btn.isConnected) { close(false); return; }
+    const r = btn.getBoundingClientRect(), vw = innerWidth, vh = innerHeight;
+    const w = Math.min(Math.max(r.width, 280), vw - 16);
+    const left = Math.min(Math.max(8, r.left), vw - w - 8);
+    const below = vh - r.bottom - 12, above = r.top - 12;
+    const down = below >= 260 || below >= above;
+    const room = Math.max(160, Math.min(420, down ? below : above));
+    pop.style.width = `${w}px`;
+    pop.style.left = `${left}px`;
+    list.style.maxHeight = `${room - 64}px`;
+    pop.style.top = down ? `${r.bottom + 6}px` : '';
+    pop.style.bottom = down ? '' : `${vh - r.top + 6}px`;
+  };
+  let raf = 0;
+  const onMove = (e) => { if (pop.contains(e.target)) return; cancelAnimationFrame(raf); raf = requestAnimationFrame(place); };
+  const onDown = (e) => { if (!pop.contains(e.target) && !btn.contains(e.target)) close(false); };
+  const pick = (i) => {
+    const it = items[i];
+    if (!it) return;
+    const bid = btn.id;
+    close(false);
+    if (sel.value !== it.o.value) {
+      sel.value = it.o.value;
+      sel.dispatchEvent(new Event('input', { bubbles: true }));
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+      sel._cbSync?.();       // a listener may have changed the value again (the persona jump resets itself)
+    }
+    // the screen may have redrawn itself on "change": focus the button that is there now
+    (document.getElementById(bid) || btn).focus({ preventScroll: true });
+  };
+  function close(refocus) {
+    if (cb?.pop !== pop) return;
+    cb = null;
+    removeEventListener('scroll', onMove, true);
+    removeEventListener('resize', onMove);
+    document.removeEventListener('pointerdown', onDown, true);
+    btn.setAttribute('aria-expanded', 'false');
+    btn.classList.remove('open');
+    pop.remove();
+    if (refocus && btn.isConnected) btn.focus({ preventScroll: true });
+  }
+  cb = { sel, btn, pop, close };
+  input.addEventListener('input', filter);
+  input.addEventListener('keydown', (e) => {
+    const pos = shown.indexOf(active);
+    const move = (k) => { e.preventDefault(); if (shown.length) setActive(shown[Math.max(0, Math.min(shown.length - 1, k))]); };
+    if (e.key === 'ArrowDown') move(pos + 1);
+    else if (e.key === 'ArrowUp') move(pos - 1);
+    else if (e.key === 'PageDown') move(pos + 8);
+    else if (e.key === 'PageUp') move(pos - 8);
+    else if (e.key === 'Home' && e.ctrlKey) move(0);
+    else if (e.key === 'End' && e.ctrlKey) move(shown.length - 1);
+    else if (e.key === 'Enter') { e.preventDefault(); if (active >= 0 && !els[active]?.hidden) pick(active); }
+    else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(true); }
+    else if (e.key === 'Tab') { e.preventDefault(); close(true); }
+  });
+  list.addEventListener('pointermove', (e) => { const o = e.target.closest('.cb-opt'); if (o && Number(o.dataset.i) !== active) setActive(Number(o.dataset.i), false); });
+  list.addEventListener('click', (e) => { const o = e.target.closest('.cb-opt'); if (o) pick(Number(o.dataset.i)); });
+  btn.setAttribute('aria-expanded', 'true');
+  btn.classList.add('open');
+  place();
+  addEventListener('scroll', onMove, true);
+  addEventListener('resize', onMove);
+  document.addEventListener('pointerdown', onDown, true);
+  if (typed) input.value = typed;
+  filter();
+  if (!typed && active >= 0) setActive(active);
+  input.focus({ preventScroll: true });
+  if (!RM && gsap) gsap.fromTo(pop, { opacity: 0, y: -4 }, { opacity: 1, y: 0, duration: 0.16, ease: 'power2.out' });
+}
+export const closeCombo = () => cb?.close(false);

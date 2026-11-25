@@ -88,7 +88,7 @@ const onDrawer = () => { if (card) pause('Tour paused while you look at a profil
 const inSpot = (x, y) => box && x >= box.left && x <= box.left + box.width && y >= box.top && y <= box.top + box.height;
 // Clicks on the dimmed page pause the tour; the highlighted part, the card and "What changed" stay usable.
 // Scrolling is never blocked: nothing covers the page except the (click-through) spotlight.
-const outside = (e) => !!card && !card.contains(e.target) && !inSpot(e.clientX, e.clientY) && !e.target.closest?.('#toast, #changes');
+const outside = (e) => !!card && !card.contains(e.target) && !inSpot(e.clientX, e.clientY) && !e.target.closest?.('#toast, #changes, .cb-pop');
 const onPointerDown = (e) => { if (outside(e)) e.stopPropagation(); };   // no drag can start under the dim
 const onClick = (e) => {
   if (!outside(e)) return;
@@ -96,7 +96,7 @@ const onClick = (e) => {
   pause('Tour paused. Press <b>▶ Tour</b> to pick up where you left off.');
 };
 const onKey = (e) => {
-  if (!card) return;
+  if (!card || document.querySelector('.cb-pop')) return;      // Esc in an open dropdown closes the dropdown only
   if (e.key === 'Escape') { e.stopPropagation(); stop('Tour closed. Press <b>▶ Tour</b> to start again.'); return; }
   const typing = ['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement?.tagName);
   if (typing || busy) return;

@@ -9,13 +9,13 @@
 - **This README changes in only three places:** the current-state table, the version list (append a row) and the open questions.
 - Older versions stay readable, so a dropped idea (e.g. the v0.1 live-deck plan) can always be recovered.
 
-## Current state (2026-11-23)
+## Current state (2026-11-26)
 
 | | |
 |---|---|
 | What | A Performance Management System as an online web app. App only, no live presentation; it must explain itself |
 | Owner | Deshank (MDI Gurgaon, PGDM-HRM 2026–28) + group (TBD) |
-| Phase | **EV build live on GitHub Pages** (repo `deshankbhardwaj/pms-is-pmsing`). All 15 screens (M0–M13 + People) and the guided tour work on VoltBridge and on uploaded organisations. QA report fixed (20 Nov). **New (23 Nov):** a feedback conversation toolkit on the Review screen (appraisal-interview checklist, defensive employees, delivering criticism with a sentence checker, Zenger & Folkman research) and **tour v2** (welcome + 10 stops in cycle order, smooth transitions, scrolling never blocked). Next: the open decision (commission on a failed gate), the Folkman video link, the ⚠️ source checks, then pharma |
+| Phase | **EV build live on GitHub Pages** (repo `deshankbhardwaj/pms-is-pmsing`). All 15 screens (M0–M13 + People) and the guided tour work on VoltBridge and on uploaded organisations. QA report fixed (20 Nov). **New (23 Nov):** a feedback conversation toolkit on the Review screen (appraisal-interview checklist, defensive employees, delivering criticism with a sentence checker, Zenger & Folkman research) and **tour v2** (welcome + 10 stops in cycle order, smooth transitions, scrolling never blocked). **26 Nov:** Country Lens *Built-in* rebuilt (pick the rulebook, see its effect, edit the rules the engine uses) and every dropdown is searchable; see the build log. Next: the open decision (commission on a failed gate), the Folkman video link, the ⚠️ source checks, then pharma |
 | Run it | Double-click **`start-prism.command`** (opens http://localhost:8000). Or in this folder: `python3 -m http.server 8000`. It does not work by double-clicking `index.html` |
 | Build log | [docs/BUILD_LOG.md](docs/BUILD_LOG.md): what's built, how it was checked, where it differs from the spec |
 | Build order | **EV (VoltBridge) first, then pharma (Helixa)**, both on one engine |

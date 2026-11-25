@@ -205,3 +205,31 @@ The 22 differences from v0.4 recorded above are folded into **v0.5 §8.7**, so t
 ### Notes
 - "Falkman" is read as **Joseph Folkman** (Zenger Folkman). The YouTube video wasn't identified, so the toolkit uses his written research; the link is an open question (v0.5 §19).
 - Open decision (unchanged): commission on a failed fair-selling gate (v0.5 D-13).
+
+---
+
+## 2026-11-26 · Country Lens Built-in rebuilt; searchable dropdowns (spec: v0.5)
+
+**Asked:** "Built-in · edit the rules" on the Country Lens seems redundant and doesn't work; the person dropdown is too long to scroll, so it needs a search, and so does every other dropdown.
+
+### Why Built-in looked broken
+Built-in showed exactly the Compare page, and the only difference was that the configuration table at the very bottom turned into text boxes. Of its 19 rows, only two feed the engine (the bottom-tier step and the performance-year start month), and the bottom-tier code was hidden from the table. Editing any other row changed wording on another screen and nothing on this one, so it looked as if nothing happened.
+
+### What Built-in is now
+1. **Which rulebook runs the whole app?** Three choices: each person's home country, India for everyone, China for everyone. This is the same as the top-bar Home · IN · CN switch, now explained where the choice lives.
+2. **What this rulebook does right now:** the bottom-tier people grouped by their next step (names open the profile), each group's performance year, and the feedback tip reviewers get.
+3. **Edit the rules the engine uses:** the bottom-tier step per country as a two-way switch (improvement plan or training/reassignment first; its wording follows) and the performance-year start month per country. The improvement-plan length is shown as set by Pace in Strategy DNA. A change re-runs the app at once: section 2 updates on the spot and "What changed" counts whose next step moved. Reset brings back the loaded rules.
+4. **Wording shown on other screens** (folded away): the remaining 17 text rows, each with the screens it appears on. Wording only, so no numbers change.
+
+Compare is now read-only and points to Built-in ("Run the whole app on one rulebook →", "Edit these rules →").
+
+### Searchable dropdowns
+All 10 existing dropdowns (the top-bar persona jump, Country Lens person and role, Rewards person and gainsharing manager, Review person and calibration manager, Development, Leadership Forge and People) and the two new month pickers open a list with a search box. All typed words must match, accents are ignored, and the search also covers the group label and site, so "support shenzhen" finds the Shenzhen support team. Arrow keys, Enter, Esc and a click outside all work; the native select stays in the page, hidden, so every screen's own logic is unchanged.
+
+### How it was checked
+- New test at 1440 and 390 (phone): every dropdown is searchable; typing filters (single and multi-word, no-match message); Enter picks and the page follows; Esc and a click outside close it; the persona jump opens the profile and resets. Built-in: four sections, clean text; "China for everyone" puts all 6 bottom-tier people on training/reassignment; switching India's step moves India's 3, reaches the Ranking Engine and is counted in "What changed"; a July start makes India's year "July to June" in the Review calendar; edited wording shows on Rewards; Reset restores everything; edits survive a reload; no sideways overflow.
+- The UI, data, layout, smoke, tour, feedback and engine checks all pass. axe-core finds nothing new (the only finding is the existing top-bar "region" note, outside the page).
+
+### Differences from v0.5 (to fold into v0.6)
+1. Country Lens Built-in has the four sections above; Compare is read-only.
+2. Every `select.sel` is a searchable list (`enhanceSelects` in `js/ui.js`).
