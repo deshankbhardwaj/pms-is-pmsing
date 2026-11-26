@@ -26,10 +26,10 @@ const STEPS = [
   { route: 'jobs', need: ['ritu'], before: (c) => { c.state.sel.role = 'ASM'; }, target: '#jdFlip', who: 'ritu', chapter: 'Plan', title: "Ritu's job, on one card",
     text: 'Ritu Deshmukh leads an assembly line in Pune. Her JD comes from observation, time study and critical incidents. Flip the card: her scorecard carries a high-voltage safety gate, and her role gets a traditional-heavy appraisal blend.',
     why: 'Standardised, safety-critical work is judged best against clear standards (checklist, BARS, KPI scorecard). A gate makes safety non-negotiable: fail it and the rating is capped.' },
-  { route: 'ranking', need: ['arjun', 'karan'], before: (c) => { c.state.sel.pool = 'SAL|IN'; }, target: '#lbCard', who: 'arjun', chapter: 'Assess', title: 'Arjun leads. Karan is capped.',
+  { route: 'ranking', need: ['arjun', 'karan'], scope: 'country', before: (c) => { c.state.sel.pool = 'SAL|IN'; }, target: '#lbCard', who: 'arjun', chapter: 'Assess', title: 'Arjun leads. Karan is capped.',
     text: 'Sales India is a large pool of measurable, individual work, so forced tiers are allowed, for the bonus only. Arjun tops it and earns the Club trip. Karan is #2 on units but failed the fair-selling gate: no top tier, rating capped at 2. Remember Karan: his review is three stops away.',
     why: 'How matters as much as what. The gate is checked before anyone is ranked.' },
-  { route: 'ranking', need: ['wang'], before: (c) => { c.state.sel.pool = 'CSA|CN'; }, target: '#tree', who: 'wang', chapter: 'Assess', title: "Wang Fang's pool is too small",
+  { route: 'ranking', need: ['wang'], scope: 'country', before: (c) => { c.state.sel.pool = 'CSA|CN'; }, target: '#tree', who: 'wang', chapter: 'Assess', title: "Wang Fang's pool is too small",
     text: 'Same screen, another pool. Customer Support in Shenzhen has 8 people, so the engine refuses to rank them: in a pool this small, one bad month would decide a tier. They are judged against absolute standards instead.',
     why: 'Fewer than 20 comparable people → absolute standards. Fewer than 30 → calibration without quotas.' },
   { route: 'review', need: ['vikram'], before: (c) => { c.state.sel.reviewTab = 'calib'; c.state.sel.calibMgr = P(c, 'vikram'); }, target: '#calibCard', dock: 'left', who: 'vikram', chapter: 'Review', title: 'Vikram rates everyone 4.6',
@@ -63,6 +63,7 @@ let spot = null, card = null, steps = STEPS, i = 0, ctxRef = null, seq = 0, busy
 // Where the card sits for this stop: beside the highlight, under it, docked at the bottom (the spotlight stops above
 // the card: phones, and wide targets too tall to leave room), or docked inside it at the left (calibration board).
 let mode = 'beside';
+let spacer = null;     // holds the page height while a same-screen stop redraws (see show)
 const scroller = () => document.querySelector('#content');
 const phone = () => innerWidth < 760;
 const barBottom = () => Math.round(document.querySelector('.topbar')?.getBoundingClientRect().bottom || 56);   // two rows on phones
@@ -145,6 +146,7 @@ function close(msg) {
   if (!card) return;
   const s = spot, c = card;
   spot = card = null; target = null; expected = null; box = null; seq++; busy = false; gliding = false;
+  spacer?.remove(); spacer = null;
   detach();
   gsap.killTweensOf([s, c]);
   gsap.to([s, c], { opacity: 0, duration: RM ? 0 : 0.25, onComplete: () => { s.remove(); c.remove(); } });
@@ -266,7 +268,7 @@ function fill(s, ctx) {
   const n = real(), k = num(i), welcome = s.id === 'welcome';
   card.classList.remove('final');
   card.innerHTML = `<div class="who">${whoRow ? avatar(whoRow.emp.name) : volty('happy')}<div><div class="step">${welcome ? `Welcome · ${n} stops` : `Step ${k} of ${n} · ${esc(s.chapter)}`}</div><h2 class="h5" id="tourTitle">${esc(title)}</h2></div></div>
-    <p>${esc(text)}</p>${welcome && skipped ? `<p class="small muted">${skipped} ${skipped === 1 ? 'stop follows a VoltBridge persona and is' : 'stops follow VoltBridge personas and are'} skipped for this organisation.</p>` : ''}<div class="why-tip" hidden>${esc(s.why)}</div>
+    <p>${esc(text)}</p>${welcome && skipped ? `<p class="small muted">${skipped} ${skipped === 1 ? 'stop does' : 'stops do'} not fit the loaded data or the current settings and ${skipped === 1 ? 'is' : 'are'} skipped.</p>` : ''}<div class="why-tip" hidden>${esc(s.why)}</div>
     <button class="tour-return" type="button" hidden>↑ Back to the highlight</button>
     ${welcome ? '' : `<div class="tdots" aria-hidden="true">${steps.filter((x) => x.id !== 'welcome').map((_, j) => `<i class="${j === k - 1 ? 'on' : j < k - 1 ? 'done' : ''}"></i>`).join('')}</div>`}
     <div class="row between tour-btns"><div class="row" style="gap:6px">${welcome ? '' : '<button class="btn light sm" data-a="back" aria-label="Previous step">←</button>'}<button class="btn light sm" data-a="why" aria-expanded="false">Why?</button>${k > 1 ? '<button class="btn ghost sm" data-a="restart">↺ Start over</button>' : ''}</div>
@@ -299,7 +301,14 @@ async function show(n) {
   s.before?.(ctx);
   if (s.route) {
     expected = s.route;
-    if (here) ctx.rerender();                              // same screen: redraw in place, keep the scroll
+    if (here) {
+      // same screen: redraw in place, keep the scroll. A shorter redraw (fewer leaderboard rows, say) would clamp
+      // the scroll and jump, so a spacer holds the old height until the glide has landed.
+      const sc = scroller(), top = sc.scrollTop, h = sc.scrollHeight;
+      ctx.rerender();
+      const short = h - sc.scrollHeight;
+      if (short > 0) { spacer?.remove(); spacer = document.createElement('div'); spacer.className = 'tour-spacer'; spacer.style.height = `${short}px`; sc.append(spacer); sc.scrollTop = top; }
+    }
     else {
       const old = document.querySelector('#page');
       ctx.go(s.route);
@@ -319,6 +328,7 @@ async function show(n) {
   mode = pickMode(t, s);
   if (t) { s.after?.(t); await glideTo(t, here && !!box); }
   if (!live()) return;
+  if (spacer) { const sp = spacer; spacer = null; gsap.to(sp, { height: 0, duration: RM ? 0 : 0.3, ease: 'power2.out', onComplete: () => sp.remove() }); }
   // 4 · in: the iris opens on the target (or the spotlight settles on it) and the card slides in beside it
   const v = visible(t);
   if (!box && v.box) gsap.set(spot, { left: v.box.left + v.box.width / 2, top: v.box.top + v.box.height / 2, width: 0, height: 0, opacity: 1 });
@@ -370,7 +380,10 @@ function wire() {
 
 export function startTour(ctx) {
   ctxRef = ctx;
-  steps = STEPS.filter((s) => !s.need || s.need.every((k) => P(ctx, k)));
+  // a stop is skipped when its persona is not in the data, or when it tells a country-pool story and the Ranking
+  // Engine pools India and China together
+  const scope = ctx.rules.ranking.pool_scope === 'together' ? 'together' : 'country';
+  steps = STEPS.filter((s) => (!s.need || s.need.every((k) => P(ctx, k))) && (!s.scope || s.scope === scope));
   skipped = STEPS.length - steps.length;
   const resume = card ? i : (i > 0 && i < steps.length ? i : 0);
   els();

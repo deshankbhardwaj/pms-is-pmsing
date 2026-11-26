@@ -28,21 +28,27 @@ export function runAll(data, rules, opts = {}) {
   const results = new Map(people.map((e) => [e.emp_id, idx.boxTrack.has(e.emp_id) ? scoreEmployee(e, idx, rules) : prelim.get(e.emp_id)]));
   const shielded = new Set(people.filter((e) => isShielded(e, idx, rules.built70).shielded).map((e) => e.emp_id));
 
-  // pools = role x country (or a forced country for the lens)
+  // pools = role x country, or one pool per role across India and China when the rules say "together".
+  // (A lens country only changes which country's rules apply, never who is compared with whom.)
+  const together = rules.ranking.pool_scope === 'together';
   const pools = [];
   const poolOf = new Map();
   const groups = new Map();
   for (const e of people) {
-    const key = `${e.role_id}|${e.country}`;
+    const key = `${e.role_id}|${together ? 'ALL' : e.country}`;
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(e);
   }
   for (const [key, members] of groups) {
     const [roleId, country] = key.split('|');
     const lensCountry = opts.countryOverride || country;
-    const v = rankingVerdict({ role: idx.role.get(roleId), country: lensCountry, members, results, shieldedIds: shielded, org, rules,
-      bottomText: bottomTierAction(idx, lensCountry, cadence, rules.ranking.bottom_tier_action).text });
+    // a pooled India + China pool has no single bottom-tier step: each person gets their own country's (see below)
+    const bt = (c) => bottomTierAction(idx, c, cadence, rules.ranking.bottom_tier_action).text;
+    const bottomText = lensCountry === 'ALL' ? `Each person's own country: India → ${bt('IN')}; China → ${bt('CN')}` : bt(lensCountry);
+    const v = rankingVerdict({ role: idx.role.get(roleId), country: lensCountry, members, results, shieldedIds: shielded, org, rules, bottomText });
     v.homeCountry = country;
+    v.key = key;
+    v.countries = [...new Set(members.map((m) => m.country))].sort((a, b) => (a === 'IN' ? -1 : b === 'IN' ? 1 : a.localeCompare(b)));
     v.methods = methodBlend(idx.role.get(roleId), org, rules.methods, v.verdict);
     if (roleId === 'SAL') v.clubTrip = [...clubTrip(members.filter((m) => !shielded.has(m.emp_id)), results, rules)];
     pools.push(v);
@@ -77,7 +83,7 @@ export function runAll(data, rules, opts = {}) {
     return {
       emp: e, title: idx.meta.titles?.[e.emp_id] || idx.role.get(e.role_id)?.title, result: res,
       leadershipTrack: isLeadershipTrack(e, idx), shielded: shielded.has(e.emp_id),
-      helix: helix(e, idx, rules.built70), nineBox: nineBox(e, res), tier,
+      helix: helix(e, idx, rules.built70), nineBox: nineBox(e, res), tier, poolKey: pool?.key || null,
       bottomTierAction: tier?.tier === 'Bottom' ? bottomTierAction(idx, country, cadence, rules.ranking.bottom_tier_action) : null,
       clubTrip: pool?.clubTrip?.includes(e.emp_id) || false,
       rewards: rewards.get(e.emp_id), tna: needs.get(e.emp_id),

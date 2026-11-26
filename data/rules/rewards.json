@@ -1,6 +1,8 @@
 {
   "_about": "Rewards maths defaults (PRISM v0.4 §8.4). The Reward_Policy sheet of an uploaded workbook overrides these. All money figures are fictional placeholders, to be sourced before final.",
   "company_factor": 1.0,
+  "min_rating_for_bonus": 2,
+  "_min_rating_for_bonus": "No annual bonus below this rating (1-5). Commission, gainsharing, merit and the learning wallet follow their own rules.",
   "rating_multiplier": {
     "1": 0,
     "2": 0.5,

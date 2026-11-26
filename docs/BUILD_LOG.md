@@ -233,3 +233,32 @@ All 10 existing dropdowns (the top-bar persona jump, Country Lens person and rol
 ### Differences from v0.5 (to fold into v0.6)
 1. Country Lens Built-in has the four sections above; Compare is read-only.
 2. Every `select.sel` is a searchable list (`enhanceSelects` in `js/ui.js`).
+
+---
+
+## 2026-11-26 (later) · Pools, the sliders, "everyone gets a bonus", results export (spec: v0.5)
+
+**Asked:** the results Excel shows "1 of 31", "1 of 32" as if typed into the data, and the pool slider seems not to work; pools should be more inclusive, with India and China together, and a dropdown for it; explain why pools were kept per country; keep the dashboard easy to read without redundancy. Then: why does almost everyone get a bonus? And a short guide for a live slider demo in front of 65 people.
+
+### What was going on
+- **"1 of 31" is output, not input.** The uploaded data has no ranks. The engine works them out on every run; the text came from the `pool_position` column of the Results workbook export.
+- **The sliders did work**, but they sat at the bottom of the page, below a leaderboard of up to 31 rows, while the pools they change were at the top. Most pools are also decided by the teamwork/innovation test, not by size, so the size sliders only move Sales and Customer Support. Nothing on screen said that.
+- **Bonus:** 251 of 252 people got a bonus because a rating of 2 earns half the target, and only one person is rated 1. India's bonus is 11.9% of payroll (92% of the target pool), China's 11.5% (94%).
+
+### What changed
+- **Ranking Engine:** the rules now sit beside the pools ("drag one and watch the pools"), and a pool whose verdict changes flashes. Each pool cell says what decided it ("too small: 8 < 20", "teamwork role", "31 people, measurable"). A legend counts the verdicts. A fourth slider sets the teamwork/innovation level that blocks ranking (6 = never). The bullet list at the bottom was removed; the gate rule moved into the decision path.
+- **India and China together:** a rule (`ranking.pool_scope`: `country` | `together`) with a dropdown, "Compare people within". Together gives one pool per role: Customer Support (22 + 8 = 30) gets forced tiers, Sales becomes one pool of 63. Each person still gets their own country's bottom-tier step, and pay stays in their own currency and policy. Every screen follows (profiles, Rewards, Country Lens, exports), "What changed" reports changes per role and country, and the tour skips its two country-pool stops when pooled. The default stays per country because pay, targets and exit law differ.
+- **Rewards:** "Who gets a bonus · rating needed" (Any / 2+ / 3+ / 4+, rule `rewards.min_rating_for_bonus`, default 2) with a live line per country: how many get a bonus and what it costs as a share of payroll. At 3+: 192 of 252 (India 10.3% of payroll). The calculator says when the threshold removes a bonus.
+- **Results export:** `pool_position` is replaced by `pool` (role · country, or role · IN + CN), `pool_rank` and `pool_size` as numbers; every sheet has filter dropdowns; Settings records the pool scope and the bonus threshold.
+- **Tour:** a same-screen stop holds the page height while it redraws, so a shorter leaderboard no longer makes the page jump.
+- **Demo guide:** a Docs artifact, "PRISM live demo guide": nine slider/switch moves with what the room sees, what to say and how to put each back, plus answers to likely pushback.
+
+### How it was checked
+- New test at 1440 and 390: 16 pools with a reason each; the forced-tier slider at 35 turns Sales to relative calibration; the block slider at "never" ranks Assembly India; pooling gives 9 role pools with Customer Support forced and a 63-row leaderboard with country chips; Rewards, Country Lens and Chen Jing's profile follow; the tour shows 8 stops; the export has number columns, filters on every sheet and the scope in Settings; switching back restores the 16 pools; 3+ gives 109 of 139 and 83 of 113 and the calculator explains Karan's zero.
+- Every number in the demo guide was taken from the app by doing the move.
+- UI, data, layout, smoke, feedback, dropdown, tour and engine checks all pass; axe-core finds nothing new.
+
+### Differences from v0.5 (to fold into v0.6)
+3. Ranking Engine layout as above; `ranking.pool_scope` rule.
+4. `rewards.min_rating_for_bonus` rule and its control.
+5. Results export columns `pool`, `pool_rank`, `pool_size` with filters.

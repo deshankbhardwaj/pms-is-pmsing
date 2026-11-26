@@ -206,28 +206,33 @@ export default {
         ws.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF14151C' } };
         ws.eachRow((row, i) => { if (i > 1) row.font = { name: 'Arial', size: 10 }; });
         ws.views = [{ state: 'frozen', ySplit: 1 }];
+        // a filter dropdown on every column header (country, role, pool, tier…)
+        if (rows.length) ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: cols.length } };
       };
+      const poolName = new Map(o.pools.map((p) => [p.key, `${ctx.idx.role.get(p.role_id)?.title || p.role_id} · ${p.homeCountry === 'ALL' ? (p.countries || []).join(' + ') : p.homeCountry}`]));
       const gain = new Map();
       for (const g of Object.values(o.gainsharing || {})) for (const p of g.perHead || []) gain.set(p.emp_id, p.amount);
       const extra = (r, n) => r.rewards?.extras?.filter((x) => x.name === n).reduce((s, x) => s + (x.amount || 0), 0) ?? '';
       const gate = (r) => { const g = r.result.gates || []; return !g.length ? 'none' : g.some((x) => x.passed === false) ? 'failed' : g.some((x) => x.passed === null) ? 'no data' : 'passed'; };
       const M = '#,##0', D2 = '0.00';
-      add('Results', [['emp_id'], ['name', 22], ['role', 26], ['site', 12], ['country', 8], ['track'], ['results', 9, D2], ['behaviours', 10, D2], ['growth', 9, D2], ['composite', 10, D2], ['rating', 8], ['gate', 9], ['tier', 9], ['pool_position', 12], ['bottom_tier_action', 40], ['shielded', 9], ['nine_box', 18], ['helix_built', 10], ['currency', 9], ['base_pay', 12, M], ['bonus', 11, M], ['commission', 12, M], ['kicker', 10, M], ['total_variable', 13, M], ['gainsharing', 12, M], ['merit_pct', 9, D2], ['new_base', 12, M], ['learning_wallet', 14, M], ['total_rewards', 13, M]],
+      add('Results', [['emp_id'], ['name', 22], ['role', 26], ['site', 12], ['country', 8], ['track'], ['results', 9, D2], ['behaviours', 10, D2], ['growth', 9, D2], ['composite', 10, D2], ['rating', 8], ['gate', 9], ['pool', 30], ['pool_rank', 10], ['pool_size', 10], ['tier', 9], ['bottom_tier_action', 40], ['shielded', 9], ['nine_box', 18], ['helix_built', 10], ['currency', 9], ['base_pay', 12, M], ['bonus', 11, M], ['commission', 12, M], ['kicker', 10, M], ['total_variable', 13, M], ['gainsharing', 12, M], ['merit_pct', 9, D2], ['new_base', 12, M], ['learning_wallet', 14, M], ['total_rewards', 13, M]],
         o.employees.map((r) => ({
           emp_id: r.emp.emp_id, name: r.emp.name, role: r.title, site: r.emp.site, country: r.emp.country, track: r.result.track.track,
           results: r.result.results ?? '', behaviours: r.result.behaviours ?? '', growth: r.result.growth ?? '', composite: r.result.composite ?? '', rating: r.result.rating ?? '',
-          gate: gate(r), tier: r.tier?.tier || '', pool_position: r.tier ? `${r.tier.position} of ${r.tier.of}` : '', bottom_tier_action: r.bottomTierAction?.text || '', shielded: r.shielded ? 'Y' : '',
+          gate: gate(r), pool: poolName.get(r.poolKey) || '', pool_rank: r.tier ? r.tier.position : '', pool_size: r.tier ? r.tier.of : '', tier: r.tier?.tier || '', bottom_tier_action: r.bottomTierAction?.text || '', shielded: r.shielded ? 'Y' : '',
           nine_box: r.nineBox?.label || '', helix_built: r.helix.built, currency: r.emp.currency, base_pay: r.rewards?.base ?? (Number(r.emp.base_pay) || ''),
           bonus: r.rewards?.bonus ?? '', commission: extra(r, 'Sales commission'), kicker: extra(r, 'Top-20% kicker'), total_variable: r.rewards?.total ?? '',
           gainsharing: gain.get(r.emp.emp_id) ?? '', merit_pct: r.rewards?.meritPct ?? '', new_base: r.rewards?.newBase ?? '', learning_wallet: r.rewards?.learningWallet ?? '', total_rewards: r.rewards?.totalRewards ?? '',
         })));
       add('Pools', [['role', 26], ['country'], ['verdict', 30], ['pool_size'], ['shielded'], ['bottom_tier_action', 40], ['reason', 60], ['method_blend', 50]],
-        o.pools.map((p) => ({ role: ctx.idx.role.get(p.role_id)?.title || p.role_id, country: p.homeCountry, verdict: p.label, pool_size: p.poolSize, shielded: p.shielded.length, bottom_tier_action: p.bottomTierAction || '', reason: p.reason, method_blend: p.methods.items.map((i) => `${i.name} ${i.pct}%`).join(' / ') })));
+        o.pools.map((p) => ({ role: ctx.idx.role.get(p.role_id)?.title || p.role_id, country: p.homeCountry === 'ALL' ? (p.countries || []).join(' + ') : p.homeCountry, verdict: p.label, pool_size: p.poolSize, shielded: p.shielded.length, bottom_tier_action: p.bottomTierAction || '', reason: p.reason, method_blend: p.methods.items.map((i) => `${i.name} ${i.pct}%`).join(' / ') })));
       const org = o.org, b = o.budget || {};
       const lensName = { home: 'Home rules (each person\'s own country)', IN: 'India rules for everyone', CN: 'China rules for everyone' }[ctx.state.lens] || ctx.state.lens;
       add('Settings', [['setting', 34], ['value', 70]], [
         ['Organisation', org.org_name], ['Data source', ctx.state.source], ['Review date', o.asOf], ['Exported', new Date().toISOString()],
         ['Country lens', lensName],
+        ['Ranking pools', ctx.rules.ranking.pool_scope === 'together' ? 'India and China together (one pool per role)' : 'Each country separately (role × country)'],
+        ['Bonus starts at rating', ctx.rules.rewards.min_rating_for_bonus ?? 2],
         ...['pace', 'innovation', 'cost_focus', 'team_orientation', 'risk_appetite', 'customer_intimacy'].map((k) => [`Strategy DNA: ${k}`, org[k]]),
         ['Review rhythm', `${o.cadence.checkins} check-ins (${o.cadence.checkins_per_year} a year), ${o.cadence.reviews} reviews, PIP ${o.cadence.pip_days}`],
         ['Key results scored as', o.mode?.okr ? 'OKRs (0.7 = 3.5)' : 'KPIs (threshold / target / stretch)'],
@@ -239,6 +244,7 @@ export default {
       add('README', [['about', 110]], [
         { about: 'PRISM results export, generated in the browser from the data loaded in the Data Hub. It cannot be loaded back in: use "Data as JSON" for that.' },
         { about: 'Composite = weighted Results / Behaviours / Growth (weights depend on the track). Rating = rounded composite, capped if a gate failed. gate: passed / failed / no data / none.' },
+        { about: 'pool = the people this person is compared with (role · country, or role · IN + CN when India and China are pooled). pool_rank and pool_size are filled only in pools with forced tiers; they are calculated, not typed in. Use the filter arrows in each header.' },
         { about: 'Money is in each person\'s own currency (see the currency column). total_variable = bonus + commission + kicker. Gainsharing is paid from the plant pool and shown separately.' },
         { about: 'total_rewards = base_pay + total_variable + learning_wallet. Settings lists the lens, Strategy DNA and switches the numbers were run with.' },
         { about: 'All VoltBridge data is fictional (MDI Gurgaon PMS course project).' },

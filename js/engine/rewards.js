@@ -30,12 +30,15 @@ export function rewardsFor(e, res, tierInfo, idx, rules, extra = {}) {
   const compa = base / mid;
   const b = band(compa, rules);
   const target = num(pol?.target_bonus_pct) || 0;
-  const mult = multiplier(idx, rules, e.country, res.rating);
+  // pay for performance: no annual bonus below the eligibility rating (Rewards screen, "Bonus starts at rating")
+  const minRating = num(rules.rewards.min_rating_for_bonus) ?? 1;
+  const eligible = res.rating >= minRating;
+  const mult = eligible ? multiplier(idx, rules, e.country, res.rating) : 0;
   const cf = rules.rewards.company_factor;
   const bonus = Math.round(base * (target / 100) * cf * mult);
   const merit = meritPct(idx, rules, e.country, res.rating, b);
   const out = {
-    currency: e.currency, base, compa: round(compa, 2), compaBand: b, targetBonusPct: target, multiplier: mult, companyFactor: cf,
+    currency: e.currency, base, compa: round(compa, 2), compaBand: b, targetBonusPct: target, multiplier: mult, companyFactor: cf, bonusEligible: eligible, minRating,
     bonus, meritPct: round(merit, 2), newBase: Math.round(base * (1 + merit / 100)), ...learningWallet(e, pol, rules, extra.gapCount || 0),
     formula: `${base} × ${target}% × ${cf} × ${mult} = ${bonus}`, extras: [], guardFactor: 1,
   };

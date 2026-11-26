@@ -28,6 +28,12 @@ export default {
     const c = e.country;
     const mg = meritGrid(ctx, c);
     const cf = ctx.rules.rewards.company_factor;
+    const minR = Number(ctx.rules.rewards.min_rating_for_bonus ?? 1);
+    const who = ['IN', 'CN'].map((cc) => {
+      const es = withRw.filter((x) => x.emp.country === cc);
+      const payroll = es.reduce((s2, x) => s2 + x.rewards.base, 0), paid = es.reduce((s2, x) => s2 + x.rewards.bonus, 0);
+      return { c: cc, all: es.length, n: es.filter((x) => x.rewards.bonus > 0).length, paid, pct: payroll ? (100 * paid / payroll).toFixed(1) : '0.0' };
+    }).filter((w) => w.all);
     const bud = ctx.out.budget;
     const countries = ['IN', 'CN'].filter((cc) => ctx.out.employees.some((x) => x.emp.country === cc));
     const asmMgrs = Object.keys(ctx.out.gainsharing);
@@ -38,7 +44,7 @@ export default {
     const team = gm ? ctx.out.employees.filter((x) => x.emp.role_id === 'ASM' && x.emp.manager_id === gm) : [];
     const g = gm ? ctx.out.gainsharing[gm] : null;
     const gCur = team[0]?.emp.currency;
-    const sal = countries.map((cc) => ({ cc, pool: ctx.out.pools.find((p) => p.role_id === 'SAL' && p.homeCountry === cc), rows: ctx.out.employees.filter((x) => x.emp.role_id === 'SAL' && x.emp.country === cc) })).filter((s) => s.rows.length);
+    const sal = countries.map((cc) => ({ cc, pool: ctx.out.pools.find((p) => p.role_id === 'SAL' && (p.homeCountry === cc || p.homeCountry === 'ALL')), rows: ctx.out.employees.filter((x) => x.emp.role_id === 'SAL' && x.emp.country === cc) })).filter((s) => s.rows.length);
     const rec = [...(ctx.data.Recognition || [])].sort((a, b) => String(b.date).localeCompare(String(a.date)));
     const pts = {}; for (const k of rec) pts[k.to_emp_id] = (pts[k.to_emp_id] || 0) + Number(k.points || 0);
     const leaders = Object.entries(pts).sort((a, b) => b[1] - a[1]).slice(0, 5);
@@ -74,7 +80,7 @@ export default {
           <div class="payout" id="payout" aria-live="polite">${UI.money(0, cur)}</div><div class="small muted">${esc(e.name)} · total variable pay</div>
           <button class="btn pri mt" id="release">💰 Release Q4 bonus</button></div>
         <div class="card"><div class="row between"><h2 class="h4" style="margin:0">Bonus calculator</h2><label class="sr-only" for="rewWho">Person</label><select class="sel" id="rewWho">${(ps.length ? ps.map((p) => p.row) : withRw.slice(0, 300)).map((x) => `<option value="${esc(x.emp.emp_id)}"${x.emp.emp_id === pid ? ' selected' : ''}>${esc(x.emp.name)} · ${esc(x.title)}</option>`).join('')}${(ps.length ? ps.some((p) => p.emp_id === pid) : withRw.slice(0, 300).includes(r)) ? '' : `<option value="${esc(pid)}" selected>${esc(e.name)}</option>`}</select></div>
-          <div class="calc mt">${[['Base pay', UI.money(rw.base, cur)], ['× target bonus', `${rw.targetBonusPct}%`], ['× company factor', cf], ['× rating multiplier', `${rw.multiplier} (rating ${r.result.rating})`], ...(rw.guardFactor < 1 ? [['× budget guard', rw.guardFactor.toFixed(3)]] : []), ['= bonus', UI.money(rw.bonus, cur)]].map(([l, v], i, arr) => `<div class="cstep${i === arr.length - 1 ? ' eq' : ''}"><small>${esc(l)}</small><b>${esc(String(v))}</b></div>`).join('')}</div>
+          <div class="calc mt">${[['Base pay', UI.money(rw.base, cur)], ['× target bonus', `${rw.targetBonusPct}%`], ['× company factor', cf], ['× rating multiplier', rw.bonusEligible === false ? `0 (rating ${r.result.rating}: bonus starts at ${rw.minRating})` : `${rw.multiplier} (rating ${r.result.rating})`], ...(rw.guardFactor < 1 ? [['× budget guard', rw.guardFactor.toFixed(3)]] : []), ['= bonus', UI.money(rw.bonus, cur)]].map(([l, v], i, arr) => `<div class="cstep${i === arr.length - 1 ? ' eq' : ''}"><small>${esc(l)}</small><b>${esc(String(v))}</b></div>`).join('')}</div>
           ${rw.extras.length ? `<dl class="kv extras mt">${rw.extras.map((x) => `<dt>${esc(x.name)}</dt><dd>${x.amount === null ? esc(x.detail) : `${UI.money(x.amount, cur)} <span class="muted small">${esc(x.detail)}</span>`}</dd>`).join('')}</dl>` : ''}
           ${r.clubTrip ? `<p class="mt"><span class="badge">✈ Club trip: top ${S.club_trip_top_pct}% of the sales pool</span></p>` : ''}
           ${r.result.capped ? `<p class="why mt" style="color:#b4232c">${esc(r.result.why)}</p>` : ''}
@@ -82,6 +88,9 @@ export default {
             ${[5, 4, 3, 2, 1].map((rt) => `<div class="r" role="row"><div class="h" role="rowheader">rating ${rt}</div>${['low', 'mid', 'high'].map((b) => { const v = mg.get(rt, b); const a = 0.06 + ((v ?? 0) / mg.max) * 0.5; return `<div role="cell" class="${rt === r.result.rating && b === rw.compaBand ? 'me' : ''}" style="background:rgba(124,58,237,${a.toFixed(2)})">${v === null ? '—' : `${v}%`}</div>`; }).join('')}</div>`).join('')}</div>` : '<p class="why">No rating × compa rows in the Reward_Policy sheet for this country; merit uses the grade budget × multiple from the rules.</p>'}
             <p class="why mt">Compa-ratio ${rw.compa} (${esc(rw.compaBand)} band: below 0.9 is low, 0.9 to 1.1 is mid, above 1.1 is high). People paid below the range midpoint get a bigger rise for the same rating. ${esc(String(e.name).split(' ')[0])}: +${rw.meritPct}% → ${UI.money(rw.newBase, cur)}.</p></div>
             <div><h3 class="h4"><label for="cf">Company factor (business result)</label></h3><div class="slider-row bare"><input type="range" id="cf" min="0.5" max="1.5" step="0.05" value="${cf}"><output id="cfO" for="cf">${cf}</output></div>
+              <h3 class="h4 mt">Who gets a bonus · rating needed</h3><div class="seg" id="minRate" role="group" aria-label="Bonus starts at rating">${[1, 2, 3, 4].map((v) => `<button class="${v === minR ? 'on' : ''}" aria-pressed="${v === minR}" data-r="${v}" aria-label="${v === 1 ? 'Any rating' : `Rating ${v} or more`}">${v === 1 ? 'Any' : `${v}+`}</button>`).join('')}</div>
+              ${who.map((w) => `<p class="small mt"><b>${UI.code(w.c)} ${w.n} of ${w.all}</b> get a bonus · ${UI.money(w.paid, CUR[w.c])} = <b>${w.pct}%</b> of payroll</p>`).join('')}
+              <p class="why small">${minR <= 2 ? `A rating of 2 ("Developing") still earns half the target bonus, so almost everyone gets something. Try "3+": pay only from "Solid" up.` : `Only "${minR === 3 ? 'Solid' : 'Strong'}" and above earn the annual bonus. Commission, gainsharing and merit follow their own rules.`}</p>
               <h3 class="h4 mt">Budget guard</h3>${countries.map(guardLine).join('')}</div></div>
         </div>
       </div>
@@ -147,6 +156,15 @@ export default {
       ctx.setRules(rules);
       ctx.changes(`<b>Company factor → ${esc(cf.value)}</b>`, before);
     });
+    root.querySelectorAll('#minRate [data-r]').forEach((b) => b.addEventListener('click', () => {
+      const v = Number(b.dataset.r);
+      if (v === Number(ctx.rules.rewards.min_rating_for_bonus ?? 1)) return;
+      const before = ctx.out;
+      const count = (o) => o.employees.filter((x) => x.rewards?.bonus > 0).length;
+      const rules = structuredClone(ctx.rules); rules.rewards.min_rating_for_bonus = v;
+      ctx.setRules(rules);
+      ctx.changes(`<b>Bonus starts at: ${v === 1 ? 'everyone' : `rating ${v}`}</b>`, before, [`<span>People with an annual bonus:</span> ${count(before)} → <b>${count(ctx.out)}</b>`]);
+    }));
     // gainsharing what-if (the engine's own formula)
     const gm = root.querySelector('#gainMgr')?.value;
     const gx = root.querySelector('#gx');

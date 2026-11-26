@@ -1,20 +1,40 @@
 {
   "_about": "Ranking Decision Engine rules (PRISM v0.4 §8.2). Edit numbers here; the engine shows which rule fired.",
+  "pool_scope": "country",
+  "_pool_scope": "'country' compares people only with the same role in the same country (pay, targets and exit law differ). 'together' pools India and China for each role; each person still gets their own country's bottom-tier step.",
   "min_pool_any_ranking": 20,
   "min_pool_forced_distribution": 30,
   "block_if_innovation_at_least": 4,
   "block_if_interdependence_at_least": 4,
   "measurability_at_least": 4,
   "tiers_default": [
-    {"tier": "Top", "pct": 20},
-    {"tier": "Core", "pct": 70},
-    {"tier": "Bottom", "pct": 10}
+    {
+      "tier": "Top",
+      "pct": 20
+    },
+    {
+      "tier": "Core",
+      "pct": 70
+    },
+    {
+      "tier": "Bottom",
+      "pct": 10
+    }
   ],
   "cutthroat_pace_at_least": 8,
   "tiers_cutthroat": [
-    {"tier": "Top", "pct": 15},
-    {"tier": "Core", "pct": 75},
-    {"tier": "Bottom", "pct": 10}
+    {
+      "tier": "Top",
+      "pct": 15
+    },
+    {
+      "tier": "Core",
+      "pct": 75
+    },
+    {
+      "tier": "Bottom",
+      "pct": 10
+    }
   ],
   "shield_months": 6,
   "gate_fail_rating_cap": 2,

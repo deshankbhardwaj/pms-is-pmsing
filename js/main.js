@@ -99,11 +99,12 @@ export function diffOut(a, b) {
   const items = [];
   if (!a || !b) return items;
   const title = (id) => b.idx.role.get(id)?.title || id;
-  const pk = (p) => `${p.role_id}|${p.homeCountry}`;
-  const pa = new Map(a.pools.map((p) => [pk(p), p]));
-  for (const p of b.pools) {
-    const o = pa.get(pk(p));
-    if (o && o.verdict !== p.verdict) items.push(`<span>${esc(title(p.role_id))} ${esc(p.homeCountry)} ranking:</span> ${esc(UI.VERDICT_SHORT[o.verdict])} → <b>${esc(UI.VERDICT_SHORT[p.verdict])}</b>`);
+  // compared per role and country, so pooling India and China together still shows what changed where
+  const byRC = (out) => { const m = new Map(); for (const p of out.pools) for (const c of (p.countries || [p.homeCountry])) m.set(`${p.role_id}|${c}`, p); return m; };
+  const pa = byRC(a), pb = byRC(b);
+  for (const [k, p] of pb) {
+    const o = pa.get(k);
+    if (o && o.verdict !== p.verdict) items.push(`<span>${esc(title(p.role_id))} ${esc(k.split('|')[1])} ranking:</span> ${esc(UI.VERDICT_SHORT[o.verdict])} → <b>${esc(UI.VERDICT_SHORT[p.verdict])}</b>`);
   }
   const blends = (out) => { const m = new Map(); for (const p of out.pools) if (!m.has(p.role_id) || p.homeCountry === 'IN') m.set(p.role_id, p.methods.items.map((i) => `${i.name} ${i.pct}`).join(' / ')); return m; };
   const ba = blends(a), bb = blends(b), changedBlends = [...bb].filter(([r, v]) => ba.has(r) && ba.get(r) !== v);
@@ -477,7 +478,7 @@ export function openPerson(id, { fromHash = false } = {}) {
   }
   const e = r.emp, res = r.result, pk = ctx.personaKey(id);
   const story = state.out.personas.find((p) => p.emp_id === id)?.story;
-  const pool = state.out.pools.find((p) => p.role_id === e.role_id && p.homeCountry === e.country);
+  const pool = state.out.pools.find((p) => p.key === r.poolKey);
   const country = ctx.lensCountry(e);
   const head = `${UI.avatar(e.name, true)}<div><div id="drawerTitle" style="font-family:var(--display);font-size:22px">${esc(e.name)}${pk ? ' <span class="tag purple">persona</span>' : ''}</div><div class="muted small">${esc(r.title)} · ${esc(e.site)} ${UI.code(e.country)} · ${esc(e.emp_id)}</div></div>`;
   const items = res.items.map((i) => `<div class="hbar"><span class="lab">${esc(i.name)}${i.boosted ? ' <span class="tag info">×customer</span>' : ''}</span>${UI.bar(((i.score ?? 0) / 5) * 100, i.score === null ? '#c6c8d6' : i.score < 2.5 ? '#e5484d' : i.score >= 4 ? '#1dab84' : '#5f7cff')}<span class="val">${i.score === null ? 'no data' : UI.fmt(i.score, 1)}</span></div>`).join('');
